@@ -25,8 +25,60 @@ class SchedulerTest < Minitest::Test
       assert_includes plist, "io.github.nyldn.ai-optimizer.daily"
       assert_includes plist, "<integer>21</integer>"
       refute_includes plist, "com.chris"
+      %w[daily.out.log daily.err.log].each do |name|
+        log_path = File.join(dir, "data", "logs", name)
+        assert File.file?(log_path)
+        assert_equal 0o600, File.stat(log_path).mode & 0o777
+      end
       scheduler.unschedule
       refute File.exist?(scheduler.plist_path)
+    end
+  end
+
+  def test_schedule_secures_existing_logs_without_truncating_them
+    in_tmpdir do |dir|
+      agents = File.join(dir, "LaunchAgents")
+      data_dir = File.join(dir, "data")
+      log_dir = File.join(data_dir, "logs")
+      FileUtils.mkdir_p(log_dir)
+      log_path = File.join(log_dir, "daily.out.log")
+      File.write(log_path, "retained receipt\n")
+      File.chmod(0o644, log_path)
+      plist_path = File.join(agents, "io.github.nyldn.ai-optimizer.daily.plist")
+      runner = TestSupport::FakeCommandRunner.new(
+        "/bin/launchctl print gui/501/io.github.nyldn.ai-optimizer.daily" => { status: 1, stdout: "", stderr: "not found" },
+        "/usr/bin/plutil -lint #{File.join(agents, ".io.github.nyldn.ai-optimizer.daily.plist.tmp")}" => { status: 0, stdout: "OK", stderr: "" },
+        "/bin/launchctl bootstrap gui/501 #{plist_path}" => { status: 0, stdout: "", stderr: "" }
+      )
+      scheduler = AIOptimizer::Scheduler.new(
+        launch_agents_dir: agents, data_dir: data_dir,
+        executable: "/usr/local/bin/ai-optimizer", uid: 501, runner: runner
+      )
+
+      scheduler.schedule(hour: 21, minute: 0)
+
+      assert_equal "retained receipt\n", File.read(log_path)
+      assert_equal 0o600, File.stat(log_path).mode & 0o777
+      assert_equal 0o600, File.stat(File.join(log_dir, "daily.err.log")).mode & 0o777
+    end
+  end
+
+  def test_schedule_refuses_a_symlinked_log_file
+    in_tmpdir do |dir|
+      data_dir = File.join(dir, "data")
+      log_dir = File.join(data_dir, "logs")
+      FileUtils.mkdir_p(log_dir)
+      external = File.join(dir, "external.log")
+      File.write(external, "must remain unchanged\n")
+      File.symlink(external, File.join(log_dir, "daily.out.log"))
+      scheduler = AIOptimizer::Scheduler.new(
+        launch_agents_dir: File.join(dir, "agents"), data_dir: data_dir,
+        executable: "/usr/local/bin/ai-optimizer", uid: 501,
+        runner: TestSupport::FakeCommandRunner.new
+      )
+
+      assert_raises(AIOptimizer::OwnershipError) { scheduler.schedule(hour: 21, minute: 0) }
+      assert_equal "must remain unchanged\n", File.read(external)
     end
   end
 

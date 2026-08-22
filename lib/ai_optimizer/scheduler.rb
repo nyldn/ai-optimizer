@@ -6,6 +6,7 @@ require "fileutils"
 module AIOptimizer
   class Scheduler
     LABEL = "io.github.nyldn.ai-optimizer.daily"
+    LOG_FILES = %w[daily.out.log daily.err.log].freeze
 
     attr_reader :launch_agents_dir, :data_dir, :executable, :uid, :runner
 
@@ -27,7 +28,7 @@ module AIOptimizer
       validate_time(hour, minute, force_outside_window)
       ensure_owned_paths
       FileUtils.mkdir_p(launch_agents_dir, mode: 0o700)
-      FileUtils.mkdir_p(File.join(data_dir, "logs"), mode: 0o700)
+      secure_log_files
 
       previous_content = File.file?(plist_path) ? File.binread(plist_path) : nil
 
@@ -112,6 +113,25 @@ module AIOptimizer
       else
         FileUtils.rm_f(plist_path)
       end
+    end
+
+    def secure_log_files
+      raise OwnershipError, "data directory must not be a symlink" if File.symlink?(data_dir)
+
+      log_dir = File.join(data_dir, "logs")
+      raise OwnershipError, "log directory must not be a symlink" if File.symlink?(log_dir)
+
+      FileUtils.mkdir_p(log_dir, mode: 0o700)
+      File.chmod(0o700, log_dir)
+      LOG_FILES.each do |name|
+        path = File.join(log_dir, name)
+        raise OwnershipError, "refusing to use a symlinked log file" if File.symlink?(path)
+
+        flags = File::WRONLY | File::CREAT | File::APPEND | File::NOFOLLOW
+        File.open(path, flags, 0o600) { |file| file.chmod(0o600) }
+      end
+    rescue Errno::ELOOP
+      raise OwnershipError, "refusing to use a symlinked log file"
     end
 
     def loaded?

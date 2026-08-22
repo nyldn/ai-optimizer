@@ -1,6 +1,6 @@
 # Privacy
 
-AI Optimizer 0.1.2 has no telemetry and sends no diagnostic data anywhere.
+AI Optimizer 0.1.3 has no telemetry and sends no diagnostic data anywhere.
 
 ## Read
 
@@ -30,7 +30,8 @@ finding.
 `doctor` and `scan` do not write. `setup`, `schedule`, and `unschedule`
 write or remove only AI Optimizer-owned files and the documented launchd label.
 Scheduled maintenance writes one local run receipt after the execution-time
-evening guard.
+evening guard. Configuration, receipts, and scheduler logs use owner-only
+permissions.
 
 AI Optimizer refuses to claim a nonempty Application Support directory unless
 its state manifest already proves product ownership.
