@@ -108,7 +108,8 @@ module AIOptimizer
         id: "tools.#{id_name}.present", category: "tools", status: status,
         message: "#{label} is available",
         detail: Redactor.scrub("#{version}#{duplicate_note}", home: @context.home),
-        remediation: paths.length > 1 ? "Remove stale PATH entries so one #{command} executable wins." : nil,
+        remediation: paths.length > 1 ?
+          "Ensure the preferred #{command} appears first; update or remove stale installations if needed." : nil,
         required: false, affects: [command]
       )
     end
@@ -279,12 +280,19 @@ module AIOptimizer
         end
       end
       duplicates = names.group_by { |name| name }.count { |_name, matches| matches.length > 1 }
-      status = invalid.positive? || duplicates.positive? ? "warn" : "pass"
+      status = if invalid.positive?
+                 "warn"
+               elsif duplicates.positive?
+                 "info"
+               else
+                 "pass"
+               end
       Finding.new(
         id: "skills.inventory", category: "skills", status: status,
         message: "Skill inventory inspected",
-        detail: "#{names.length} skills, #{duplicates} duplicate names, #{invalid} invalid frontmatter files",
-        remediation: status == "warn" ? "Review duplicate names and validate SKILL.md frontmatter." : nil,
+        detail: "#{names.length} skills, #{duplicates} names shared across tool roots, " \
+          "#{invalid} invalid frontmatter files",
+        remediation: invalid.positive? ? "Fix invalid SKILL.md frontmatter before using those skills." : nil,
         required: false, affects: ["claude", "codex"]
       ).yield_self { |finding| [finding] }
     end
