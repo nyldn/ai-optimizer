@@ -22,7 +22,7 @@ mkdir -p "$DIST_DIR"
 rm -f "$DIST_DIR/$ARCHIVE" "$DIST_DIR/$ARCHIVE.sha256"
 rm -f "$DIST_DIR/install.sh" "$DIST_DIR/install.sh.sha256"
 
-git -C "$ROOT_DIR" archive +  --format=tar +  --prefix="ai-optimizer-${VERSION}/" +  HEAD | gzip -n -9 > "$DIST_DIR/$ARCHIVE"
+git -C "$ROOT_DIR" archive --format=tar --prefix="ai-optimizer-${VERSION}/" HEAD | gzip -n -9 > "$DIST_DIR/$ARCHIVE"
 
 cp "$ROOT_DIR/install.sh" "$DIST_DIR/install.sh"
 (

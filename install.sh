@@ -52,8 +52,8 @@ case "$INSTALL_ROOT" in
     ;;
 esac
 
-curl -fL --retry 2 --connect-timeout 10 +  "$RELEASE_BASE/$ARCHIVE" -o "$TEMP_DIR/$ARCHIVE"
-curl -fL --retry 2 --connect-timeout 10 +  "$RELEASE_BASE/$ARCHIVE.sha256" -o "$TEMP_DIR/$ARCHIVE.sha256"
+curl -fL --retry 2 --connect-timeout 10 "$RELEASE_BASE/$ARCHIVE" -o "$TEMP_DIR/$ARCHIVE"
+curl -fL --retry 2 --connect-timeout 10 "$RELEASE_BASE/$ARCHIVE.sha256" -o "$TEMP_DIR/$ARCHIVE.sha256"
 
 (
   cd "$TEMP_DIR"

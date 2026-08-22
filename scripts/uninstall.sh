@@ -56,7 +56,7 @@ if [ "$FORCE" -eq 0 ]; then
 fi
 
 if [ -x "$INSTALL_ROOT/bin/ai-optimizer" ]; then
-  AI_OPTIMIZER_DATA_DIR="$DATA_DIR" +    "$INSTALL_ROOT/bin/ai-optimizer" unschedule >/dev/null 2>&1 || true
+  env AI_OPTIMIZER_DATA_DIR="$DATA_DIR" "$INSTALL_ROOT/bin/ai-optimizer" unschedule >/dev/null 2>&1 || true
 fi
 
 if [ -L "$LINK_PATH" ] && [ "$(readlink "$LINK_PATH")" = "$INSTALL_ROOT/bin/ai-optimizer" ]; then

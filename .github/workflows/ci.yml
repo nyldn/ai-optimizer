@@ -37,7 +37,7 @@ jobs:
           second="$RUNNER_TEMP/release-b"
           AI_OPTIMIZER_DIST_DIR="$first" scripts/build-release.sh
           AI_OPTIMIZER_DIST_DIR="$second" scripts/build-release.sh
-          cmp "$first/ai-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz" +              "$second/ai-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz"
+          cmp "$first/ai-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz" "$second/ai-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz"
       - name: Verify install and uninstall round trip
         run: |
           AI_OPTIMIZER_DIST_DIR="$RUNNER_TEMP/release-a" test/install_test.sh
