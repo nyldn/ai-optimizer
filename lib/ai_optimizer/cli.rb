@@ -221,8 +221,7 @@ module AIOptimizer
 
     def data_dir
       @data_dir ||= File.expand_path(
-        @env["AI_OPTIMIZER_DATA_DIR"] ||
-        File.join(Dir.home, "Library", "Application Support", "ai-optimizer")
+        @env["AI_OPTIMIZER_DATA_DIR"] || Config.default_data_dir
       )
     end
 

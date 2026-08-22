@@ -6,10 +6,16 @@ require "securerandom"
 
 module AIOptimizer
   class Config
+    APPLICATION_SUPPORT_NAME = "io.github.nyldn.ai-optimizer"
+
     attr_reader :data_dir, :path, :manifest_path, :default_workspace_root
 
+    def self.default_data_dir(home = Dir.home)
+      File.join(home, "Library", "Application Support", APPLICATION_SUPPORT_NAME)
+    end
+
     def initialize(data_dir: nil, default_workspace_root: nil)
-      @data_dir = File.expand_path(data_dir || File.join(Dir.home, "Library", "Application Support", "ai-optimizer"))
+      @data_dir = File.expand_path(data_dir || self.class.default_data_dir)
       @path = File.join(@data_dir, "config.json")
       @manifest_path = File.join(@data_dir, "state-manifest.json")
       @default_workspace_root = File.expand_path(default_workspace_root || inferred_workspace_root)
@@ -25,6 +31,7 @@ module AIOptimizer
     end
 
     def load
+      verify_existing_ownership
       return defaults unless File.file?(path)
       raise OwnershipError, "refusing to read symlinked config" if File.symlink?(path)
 
@@ -41,7 +48,7 @@ module AIOptimizer
 
       serialized = JSON.pretty_generate(config) + "\n"
       JSON.parse(serialized)
-      ensure_owned_directory
+      claim_directory
       atomic_write(path, serialized, 0o600)
       write_manifest
       config
@@ -77,19 +84,42 @@ module AIOptimizer
       Dir.exist?(candidate) ? candidate : Dir.pwd
     end
 
-    def ensure_owned_directory
+    def claim_directory
       raise OwnershipError, "data directory must not be a symlink" if File.symlink?(data_dir)
 
+      if File.exist?(data_dir) && !File.directory?(data_dir)
+        raise OwnershipError, "AI Optimizer data path is not a directory"
+      end
       FileUtils.mkdir_p(data_dir, mode: 0o700)
       File.chmod(0o700, data_dir)
+      entries = Dir.children(data_dir)
+      if !entries.empty? && !owned_manifest?
+        raise OwnershipError, "refusing to claim a nonempty unowned data directory"
+      end
+      write_manifest unless owned_manifest?
     end
 
     def assert_contained_target(target)
-      ensure_owned_directory
       expanded = File.expand_path(target)
       prefix = data_dir.end_with?(File::SEPARATOR) ? data_dir : data_dir + File::SEPARATOR
       raise OwnershipError, "write target is outside AI Optimizer data" unless expanded.start_with?(prefix)
       raise OwnershipError, "refusing to replace a symlink" if File.symlink?(expanded)
+    end
+
+    def verify_existing_ownership
+      return unless Dir.exist?(data_dir)
+      return if Dir.children(data_dir).empty?
+      return if owned_manifest?
+
+      raise OwnershipError, "AI Optimizer data directory is not product-owned"
+    end
+
+    def owned_manifest?
+      return false unless File.file?(manifest_path) && !File.symlink?(manifest_path)
+
+      JSON.parse(File.binread(manifest_path)).fetch("owner", nil) == "ai-optimizer"
+    rescue JSON::ParserError
+      false
     end
 
     def write_manifest

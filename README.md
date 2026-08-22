@@ -33,7 +33,7 @@ skills, repositories, or launchd unless you explicitly add `--schedule`.
 Example:
 
 ```text
-AI Optimizer 0.1.0
+AI Optimizer 0.1.1
 
 [PASS] system.macos - macOS is supported
 [PASS] tools.claude.present - Claude Code is available
@@ -114,7 +114,7 @@ The direct path verifies the installer before it runs, then the installer
 verifies the release archive before changing live paths:
 
 ```sh
-VERSION=0.1.0
+VERSION=0.1.1
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh"
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh.sha256"
 shasum -a 256 -c install.sh.sha256
