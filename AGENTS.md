@@ -23,7 +23,7 @@ CLI for Claude Code, Codex, MCP, skills, and coding workspaces.
 Run all of these before claiming completion:
 
 ```sh
-/usr/bin/ruby test/test_all.rb
+/usr/bin/ruby -w test/test_all.rb
 scripts/check-syntax.sh
 scripts/build-release.sh
 test/install_test.sh

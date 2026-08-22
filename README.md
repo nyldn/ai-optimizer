@@ -150,7 +150,7 @@ Runtime code uses the Ruby standard library and stays compatible with the macOS
 system Ruby 2.6:
 
 ```sh
-/usr/bin/ruby test/test_all.rb
+/usr/bin/ruby -w test/test_all.rb
 scripts/check-syntax.sh
 ```
 

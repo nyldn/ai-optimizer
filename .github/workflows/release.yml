@@ -24,7 +24,7 @@ jobs:
           test "$GITHUB_REF_NAME" = "v$version"
       - name: Run release tests
         run: |
-          /usr/bin/ruby test/test_all.rb
+          /usr/bin/ruby -w test/test_all.rb
           scripts/check-syntax.sh
       - name: Build release assets
         run: scripts/build-release.sh

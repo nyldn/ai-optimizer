@@ -28,7 +28,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Test with macOS system Ruby
-        run: /usr/bin/ruby test/test_all.rb
+        run: /usr/bin/ruby -w test/test_all.rb
       - name: Check Ruby and shell syntax
         run: scripts/check-syntax.sh
       - name: Verify deterministic archives

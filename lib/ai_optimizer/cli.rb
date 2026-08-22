@@ -153,13 +153,12 @@ module AIOptimizer
     end
 
     def update_schedule(enabled)
-      state = yield
+      yield
       values = config.load
       current = values.fetch("schedule", {})
       values["schedule"] = current.merge("enabled" => enabled)
       config.save(values)
       @stdout.puts(enabled ? "Schedule enabled." : "Schedule removed.")
-      state
       0
     end
 
