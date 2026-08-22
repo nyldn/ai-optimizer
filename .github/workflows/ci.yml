@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: macOS ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - macos-15
+          - macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Test with macOS system Ruby
+        run: /usr/bin/ruby test/test_all.rb
+      - name: Check Ruby and shell syntax
+        run: scripts/check-syntax.sh
+      - name: Verify deterministic archives
+        run: |
+          first="$RUNNER_TEMP/release-a"
+          second="$RUNNER_TEMP/release-b"
+          AI_OPTIMIZER_DIST_DIR="$first" scripts/build-release.sh
+          AI_OPTIMIZER_DIST_DIR="$second" scripts/build-release.sh
+          cmp "$first/ai-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz" +              "$second/ai-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz"
+      - name: Verify install and uninstall round trip
+        run: |
+          AI_OPTIMIZER_DIST_DIR="$RUNNER_TEMP/release-a" test/install_test.sh
+      - name: Scan Git history for secrets
+        run: |
+          brew install gitleaks
+          gitleaks git --redact --exit-code 1 .

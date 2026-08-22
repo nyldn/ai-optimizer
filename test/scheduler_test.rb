@@ -1,0 +1,51 @@
+# frozen_string_literal: true
+
+require_relative "test_helper"
+
+class SchedulerTest < Minitest::Test
+  def test_default_evening_schedule_round_trip_is_exact_and_idempotent
+    in_tmpdir do |dir|
+      plist_path = File.join(dir, "LaunchAgents", "io.github.nyldn.ai-optimizer.daily.plist")
+      runner = TestSupport::FakeCommandRunner.new(
+        "/bin/launchctl print gui/501/io.github.nyldn.ai-optimizer.daily" => { status: 1, stdout: "", stderr: "not found" },
+        "/usr/bin/plutil -lint #{File.join(dir, "LaunchAgents", ".io.github.nyldn.ai-optimizer.daily.plist.tmp")}" => { status: 0, stdout: "OK", stderr: "" },
+        "/bin/launchctl bootstrap gui/501 #{plist_path}" => { status: 0, stdout: "", stderr: "" },
+        "/bin/launchctl bootout gui/501/io.github.nyldn.ai-optimizer.daily" => { status: 0, stdout: "", stderr: "" }
+      )
+      scheduler = AIOptimizer::Scheduler.new(
+        launch_agents_dir: File.join(dir, "LaunchAgents"),
+        data_dir: File.join(dir, "data"),
+        executable: "/usr/local/bin/ai-optimizer",
+        uid: 501,
+        runner: runner
+      )
+
+      scheduler.schedule(hour: 21, minute: 0)
+      plist = File.read(scheduler.plist_path)
+      assert_includes plist, "io.github.nyldn.ai-optimizer.daily"
+      assert_includes plist, "<integer>21</integer>"
+      refute_includes plist, "com.chris"
+      scheduler.unschedule
+      refute File.exist?(scheduler.plist_path)
+    end
+  end
+
+  def test_rejects_outside_window_without_explicit_override
+    in_tmpdir do |dir|
+      scheduler = AIOptimizer::Scheduler.new(
+        launch_agents_dir: File.join(dir, "agents"), data_dir: File.join(dir, "data"),
+        executable: "/tmp/ai-optimizer", uid: 501,
+        runner: TestSupport::FakeCommandRunner.new
+      )
+      assert_raises(AIOptimizer::UsageError) { scheduler.schedule(hour: 10, minute: 0) }
+    end
+  end
+
+  def test_runtime_guard_writes_skip_receipt_outside_evening_window
+    in_tmpdir do |dir|
+      receipt = AIOptimizer::Maintenance.new(data_dir: dir, clock: -> { Time.local(2026, 8, 22, 10, 0, 0) }).run
+      assert_equal "skipped_outside_window", receipt.fetch("status")
+      assert_equal receipt, JSON.parse(File.read(File.join(dir, "reports", "latest-run.json")))
+    end
+  end
+end

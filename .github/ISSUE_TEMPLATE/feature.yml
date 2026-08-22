@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a focused diagnostic or owned-maintenance improvement
+title: "feature: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard to understand or maintain today?
+    validations:
+      required: true
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Read and write boundary
+      description: What would the feature inspect, report, or change?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+    validations:
+      required: true

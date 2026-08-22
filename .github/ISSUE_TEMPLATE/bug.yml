@@ -1,0 +1,39 @@
+name: Bug report
+description: Report reproducible AI Optimizer behavior
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Remove credentials, MCP endpoints, usernames, and workspace names.
+  - type: input
+    id: version
+    attributes:
+      label: AI Optimizer version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and architecture
+      placeholder: macOS 15.6, arm64
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+    validations:
+      required: true
+  - type: textarea
+    id: findings
+    attributes:
+      label: Relevant finding IDs and statuses

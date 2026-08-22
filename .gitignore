@@ -1,0 +1,6 @@
+/.bundle/
+/coverage/
+/dist/
+/.DS_Store
+*.log
+*.tmp
