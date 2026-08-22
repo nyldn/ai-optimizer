@@ -3,6 +3,12 @@
 All notable changes are documented here. AI Optimizer follows semantic
 versioning.
 
+## 0.1.4 - 2026-08-22
+
+- Keep opted-in launchd jobs registered across Homebrew binary replacement by
+  using immutable `/usr/bin/env` as the launch program and passing the exact AI
+  Optimizer executable as an argument.
+
 ## 0.1.3 - 2026-08-22
 
 - Pre-create scheduled-maintenance logs with owner-only permissions and repair

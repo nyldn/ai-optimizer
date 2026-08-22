@@ -157,6 +157,7 @@ module AIOptimizer
           <string>#{LABEL}</string>
           <key>ProgramArguments</key>
           <array>
+            <string>/usr/bin/env</string>
             <string>#{escape(executable)}</string>
             <string>run-maintenance</string>
           </array>

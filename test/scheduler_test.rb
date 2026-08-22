@@ -25,6 +25,13 @@ class SchedulerTest < Minitest::Test
       assert_includes plist, "io.github.nyldn.ai-optimizer.daily"
       assert_includes plist, "<integer>21</integer>"
       refute_includes plist, "com.chris"
+      expected_program = %r{
+        <key>ProgramArguments</key>\s*<array>\s*
+        <string>/usr/bin/env</string>\s*
+        <string>/usr/local/bin/ai-optimizer</string>\s*
+        <string>run-maintenance</string>
+      }x
+      assert_match expected_program, plist
       %w[daily.out.log daily.err.log].each do |name|
         log_path = File.join(dir, "data", "logs", name)
         assert File.file?(log_path)
