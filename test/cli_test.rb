@@ -12,7 +12,7 @@ class CLITest < Minitest::Test
   def test_version_and_help
     stdout, stderr, status = run_cli("version")
     assert status.success?, stderr
-    assert_equal "ai-optimizer 0.1.0\n", stdout
+    assert_equal "ai-optimizer #{AIOptimizer::VERSION}\n", stdout
 
     stdout, stderr, status = run_cli("help")
     assert status.success?, stderr

@@ -20,7 +20,7 @@ done
 
 INSTALL_ROOT="${AI_OPTIMIZER_PREFIX:-$HOME/.local/share/ai-optimizer}"
 BIN_DIR="${AI_OPTIMIZER_BIN_DIR:-$HOME/.local/bin}"
-DATA_DIR="${AI_OPTIMIZER_DATA_DIR:-$HOME/Library/Application Support/ai-optimizer}"
+DATA_DIR="${AI_OPTIMIZER_DATA_DIR:-$HOME/Library/Application Support/io.github.nyldn.ai-optimizer}"
 LINK_PATH="$BIN_DIR/ai-optimizer"
 
 case "$INSTALL_ROOT" in

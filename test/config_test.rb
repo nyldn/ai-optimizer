@@ -38,4 +38,18 @@ class ConfigTest < Minitest::Test
       assert_equal "{}", File.read(target)
     end
   end
+
+  def test_refuses_to_claim_nonempty_unowned_data_directory
+    in_tmpdir do |dir|
+      data_dir = File.join(dir, "data")
+      FileUtils.mkdir_p(File.join(data_dir, "backups"))
+      protected_file = File.join(data_dir, "backups", "existing.bak")
+      File.write(protected_file, "keep me")
+      config = AIOptimizer::Config.new(data_dir: data_dir, default_workspace_root: dir)
+
+      assert_raises(AIOptimizer::OwnershipError) { config.save(config.defaults) }
+      assert_equal "keep me", File.read(protected_file)
+      refute File.exist?(config.manifest_path)
+    end
+  end
 end

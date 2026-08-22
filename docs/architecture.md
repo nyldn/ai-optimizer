@@ -33,7 +33,7 @@ exits 3.
 ## Ownership
 
 Configuration and reports live under
-`~/Library/Application Support/ai-optimizer`. User automation is the exact
+`~/Library/Application Support/io.github.nyldn.ai-optimizer`. User automation is the exact
 label `io.github.nyldn.ai-optimizer.daily`. Writes reject symlink targets,
 stage and validate before rename, and record product provenance.
 
