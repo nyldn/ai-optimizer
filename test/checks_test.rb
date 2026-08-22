@@ -116,4 +116,65 @@ class ChecksTest < Minitest::Test
       refute_includes finding.detail, "PATH matches"
     end
   end
+
+  def test_distinct_path_matches_use_non_destructive_remediation
+    in_tmpdir do |dir|
+      first = File.join(dir, "first")
+      second = File.join(dir, "second")
+      FileUtils.mkdir_p([first, second])
+      [first, second].each do |root|
+        executable = File.join(root, "codex")
+        File.write(executable, "fixture")
+        File.chmod(0o755, executable)
+      end
+      context = AIOptimizer::CheckContext.new(
+        home: dir, data_dir: File.join(dir, "data"), workspace_root: dir,
+        path: [first, second].join(File::PATH_SEPARATOR),
+        runner: TestSupport::FakeCommandRunner.new,
+        platform: "darwin", architecture: "arm64", macos_version: "15.6"
+      )
+
+      finding = AIOptimizer::Doctor.new(context).run.findings.find { |item| item.id == "tools.codex.present" }
+      assert_equal "warn", finding.status
+      assert_includes finding.remediation, "preferred codex"
+      refute_includes finding.remediation, "Remove stale PATH entries"
+    end
+  end
+
+  def test_skill_names_shared_across_tool_roots_are_informational
+    in_tmpdir do |dir|
+      [".claude", ".codex"].each do |tool_root|
+        skill = File.join(dir, tool_root, "skills", "shared-skill")
+        FileUtils.mkdir_p(skill)
+        File.write(File.join(skill, "SKILL.md"), "---\nname: shared-skill\ndescription: fixture\n---\n")
+      end
+      context = AIOptimizer::CheckContext.new(
+        home: dir, data_dir: File.join(dir, "data"), workspace_root: dir,
+        path: "", runner: TestSupport::FakeCommandRunner.new,
+        platform: "darwin", architecture: "arm64", macos_version: "15.6"
+      )
+
+      finding = AIOptimizer::Doctor.new(context).run.findings.find { |item| item.id == "skills.inventory" }
+      assert_equal "info", finding.status
+      assert_includes finding.detail, "shared across tool roots"
+      assert_nil finding.remediation
+    end
+  end
+
+  def test_invalid_skill_frontmatter_still_warns
+    in_tmpdir do |dir|
+      skill = File.join(dir, ".codex", "skills", "invalid")
+      FileUtils.mkdir_p(skill)
+      File.write(File.join(skill, "SKILL.md"), "missing frontmatter")
+      context = AIOptimizer::CheckContext.new(
+        home: dir, data_dir: File.join(dir, "data"), workspace_root: dir,
+        path: "", runner: TestSupport::FakeCommandRunner.new,
+        platform: "darwin", architecture: "arm64", macos_version: "15.6"
+      )
+
+      finding = AIOptimizer::Doctor.new(context).run.findings.find { |item| item.id == "skills.inventory" }
+      assert_equal "warn", finding.status
+      assert_includes finding.remediation, "frontmatter"
+    end
+  end
 end

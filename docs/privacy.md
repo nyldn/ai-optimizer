@@ -1,6 +1,6 @@
 # Privacy
 
-AI Optimizer 0.1.1 has no telemetry and sends no diagnostic data anywhere.
+AI Optimizer 0.1.2 has no telemetry and sends no diagnostic data anywhere.
 
 ## Read
 
