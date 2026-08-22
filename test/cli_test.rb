@@ -35,4 +35,17 @@ class CLITest < Minitest::Test
     assert_equal 2, status.exitstatus
     assert_includes stderr, "Usage"
   end
+
+  def test_setup_rejects_missing_workspace_root
+    in_tmpdir do |dir|
+      missing = File.join(dir, "missing")
+      _stdout, stderr, status = run_cli(
+        "setup", "--workspace-root", missing,
+        env: { "AI_OPTIMIZER_DATA_DIR" => File.join(dir, "data") }
+      )
+      assert_equal 2, status.exitstatus
+      assert_includes stderr, "workspace root"
+      refute File.exist?(File.join(dir, "data", "config.json"))
+    end
+  end
 end

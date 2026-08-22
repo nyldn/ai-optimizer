@@ -47,4 +47,11 @@ class ReportTest < Minitest::Test
   def test_rejects_duplicate_ids
     assert_raises(ArgumentError) { AIOptimizer::Report.new([findings.first, findings.first]) }
   end
+
+  def test_redaction_keeps_truncated_unicode_valid
+    text = "€" * 3_000
+    scrubbed = AIOptimizer::Redactor.scrub(text)
+    assert scrubbed.valid_encoding?
+    JSON.generate("detail" => scrubbed)
+  end
 end

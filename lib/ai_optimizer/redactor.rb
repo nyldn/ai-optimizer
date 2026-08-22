@@ -2,7 +2,7 @@
 
 module AIOptimizer
   module Redactor
-    MAX_DETAIL_BYTES = 2_000
+    MAX_DETAIL_CHARACTERS = 2_000
 
     module_function
 
@@ -15,7 +15,7 @@ module AIOptimizer
       text = text.gsub(/\bBearer\s+[^\s]+/i, "Bearer [redacted]")
       text = text.gsub(/\b(api[_-]?key|token|secret|password)\s*[:=]\s*[^\s,;]+/i, '\\1=[redacted]')
       text = text.gsub(/\b(?:sk|pk|ghp|github_pat|xox[baprs])[-_][A-Za-z0-9_-]{12,}\b/i, "[redacted]")
-      text.byteslice(0, MAX_DETAIL_BYTES)
+      text.length > MAX_DETAIL_CHARACTERS ? text[0, MAX_DETAIL_CHARACTERS] : text
     end
   end
 end

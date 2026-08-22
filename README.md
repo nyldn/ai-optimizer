@@ -131,6 +131,7 @@ Homebrew:
 
 ```sh
 brew upgrade ai-optimizer
+ai-optimizer unschedule
 brew uninstall ai-optimizer
 ```
 

@@ -23,6 +23,7 @@ echo "$OUTPUT" | grep -q "Add AI Optimizer to zsh PATH"
 [ -L "$BIN_DIR/ai-optimizer" ]
 [ "$("$BIN_DIR/ai-optimizer" version)" = "ai-optimizer $VERSION" ]
 
+mkdir -p "$TEST_ROOT/workspaces"
 env AI_OPTIMIZER_DATA_DIR="$DATA_DIR" AI_OPTIMIZER_LAUNCH_AGENTS_DIR="$AGENTS_DIR" "$BIN_DIR/ai-optimizer" setup --workspace-root "$TEST_ROOT/workspaces" >/dev/null
 
 [ -f "$DATA_DIR/state-manifest.json" ]

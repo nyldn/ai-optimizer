@@ -29,6 +29,8 @@ module AIOptimizer
       FileUtils.mkdir_p(launch_agents_dir, mode: 0o700)
       FileUtils.mkdir_p(File.join(data_dir, "logs"), mode: 0o700)
 
+      previous_content = File.file?(plist_path) ? File.binread(plist_path) : nil
+
       temporary = File.join(launch_agents_dir, ".#{LABEL}.plist.tmp")
       File.open(temporary, File::WRONLY | File::CREAT | File::TRUNC, 0o600) do |file|
         file.write(plist(hour, minute))
@@ -39,10 +41,17 @@ module AIOptimizer
       raise InternalError, "generated launchd plist failed validation" unless validation.success?
 
       was_loaded = loaded?
-      runner.run(["/bin/launchctl", "bootout", service_target], timeout: 10) if was_loaded
+      if was_loaded
+        bootout = runner.run(["/bin/launchctl", "bootout", service_target], timeout: 10)
+        raise InternalError, "launchd bootout failed; previous schedule was preserved" unless bootout.success?
+      end
       File.rename(temporary, plist_path)
       result = runner.run(["/bin/launchctl", "bootstrap", domain_target, plist_path], timeout: 10)
-      raise InternalError, "launchd bootstrap failed" unless result.success?
+      unless result.success?
+        restore_previous_plist(previous_content, temporary)
+        runner.run(["/bin/launchctl", "bootstrap", domain_target, plist_path], timeout: 10) if was_loaded && previous_content
+        raise InternalError, "launchd bootstrap failed; previous schedule was restored"
+      end
 
       { "label" => LABEL, "hour" => hour, "minute" => minute, "loaded" => true }
     ensure
@@ -59,7 +68,10 @@ module AIOptimizer
 
     def unschedule
       ensure_owned_paths
-      runner.run(["/bin/launchctl", "bootout", service_target], timeout: 10) if loaded?
+      if loaded?
+        result = runner.run(["/bin/launchctl", "bootout", service_target], timeout: 10)
+        raise InternalError, "launchd bootout failed; plist was preserved" unless result.success?
+      end
       FileUtils.rm_f(plist_path)
       { "label" => LABEL, "loaded" => false, "plist_present" => false }
     end
@@ -82,6 +94,24 @@ module AIOptimizer
     def ensure_owned_paths
       raise OwnershipError, "LaunchAgents directory must not be a symlink" if File.symlink?(launch_agents_dir)
       raise OwnershipError, "refusing to replace a symlinked launch agent" if File.symlink?(plist_path)
+      return unless File.file?(plist_path)
+
+      content = File.binread(plist_path, 64_000)
+      owned = content.include?("<string>#{LABEL}</string>") && content.include?("<string>run-maintenance</string>")
+      raise OwnershipError, "existing launch agent is not provably owned by AI Optimizer" unless owned
+    end
+
+    def restore_previous_plist(previous_content, temporary)
+      if previous_content
+        File.open(temporary, File::WRONLY | File::CREAT | File::TRUNC, 0o600) do |file|
+          file.write(previous_content)
+          file.flush
+          file.fsync
+        end
+        File.rename(temporary, plist_path)
+      else
+        FileUtils.rm_f(plist_path)
+      end
     end
 
     def loaded?

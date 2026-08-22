@@ -48,4 +48,48 @@ class SchedulerTest < Minitest::Test
       assert_equal receipt, JSON.parse(File.read(File.join(dir, "reports", "latest-run.json")))
     end
   end
+
+  def test_failed_bootout_preserves_previous_plist
+    in_tmpdir do |dir|
+      agents = File.join(dir, "LaunchAgents")
+      FileUtils.mkdir_p(agents)
+      plist_path = File.join(agents, "io.github.nyldn.ai-optimizer.daily.plist")
+      previous = "<string>io.github.nyldn.ai-optimizer.daily</string><string>run-maintenance</string>"
+      File.write(plist_path, previous)
+      runner = TestSupport::FakeCommandRunner.new(
+        "/usr/bin/plutil -lint #{File.join(agents, ".io.github.nyldn.ai-optimizer.daily.plist.tmp")}" => { status: 0, stdout: "OK", stderr: "" },
+        "/bin/launchctl print gui/501/io.github.nyldn.ai-optimizer.daily" => { status: 0, stdout: "loaded", stderr: "" },
+        "/bin/launchctl bootout gui/501/io.github.nyldn.ai-optimizer.daily" => { status: 5, stdout: "", stderr: "failed" }
+      )
+      scheduler = AIOptimizer::Scheduler.new(
+        launch_agents_dir: agents, data_dir: File.join(dir, "data"),
+        executable: "/usr/local/bin/ai-optimizer", uid: 501, runner: runner
+      )
+
+      assert_raises(AIOptimizer::InternalError) { scheduler.schedule(hour: 21, minute: 0) }
+      assert_equal previous, File.read(plist_path)
+    end
+  end
+
+  def test_failed_bootstrap_restores_previous_plist
+    in_tmpdir do |dir|
+      agents = File.join(dir, "LaunchAgents")
+      FileUtils.mkdir_p(agents)
+      plist_path = File.join(agents, "io.github.nyldn.ai-optimizer.daily.plist")
+      previous = "<string>io.github.nyldn.ai-optimizer.daily</string><string>run-maintenance</string>"
+      File.write(plist_path, previous)
+      runner = TestSupport::FakeCommandRunner.new(
+        "/usr/bin/plutil -lint #{File.join(agents, ".io.github.nyldn.ai-optimizer.daily.plist.tmp")}" => { status: 0, stdout: "OK", stderr: "" },
+        "/bin/launchctl print gui/501/io.github.nyldn.ai-optimizer.daily" => { status: 1, stdout: "", stderr: "not loaded" },
+        "/bin/launchctl bootstrap gui/501 #{plist_path}" => { status: 5, stdout: "", stderr: "failed" }
+      )
+      scheduler = AIOptimizer::Scheduler.new(
+        launch_agents_dir: agents, data_dir: File.join(dir, "data"),
+        executable: "/usr/local/bin/ai-optimizer", uid: 501, runner: runner
+      )
+
+      assert_raises(AIOptimizer::InternalError) { scheduler.schedule(hour: 21, minute: 0) }
+      assert_equal previous, File.read(plist_path)
+    end
+  end
 end

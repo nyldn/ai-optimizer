@@ -101,6 +101,8 @@ module AIOptimizer
       require_no_args(args)
 
       workspace_root = File.expand_path(options[:workspace_root] || config.default_workspace_root)
+      raise UsageError, "workspace root must be an existing directory" unless Dir.exist?(workspace_root)
+
       values = config.defaults.merge("workspace_root" => workspace_root)
       @stdout.puts("AI Optimizer will create:")
       @stdout.puts("  #{display_path(config.path)}")

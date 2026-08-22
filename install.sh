@@ -60,8 +60,28 @@ curl -fsSL --retry 2 --connect-timeout 10 "$RELEASE_BASE/$ARCHIVE.sha256" -o "$T
   shasum -a 256 -c "$ARCHIVE.sha256"
 )
 
+while IFS= read -r entry; do
+  case "$entry" in
+    "ai-optimizer-${VERSION}"|"ai-optimizer-${VERSION}/"|"ai-optimizer-${VERSION}/"*) ;;
+    *)
+      echo "Release archive contains an unexpected path." >&2
+      exit 1
+      ;;
+  esac
+  case "/$entry/" in
+    *"/../"*)
+      echo "Release archive contains parent traversal." >&2
+      exit 1
+      ;;
+  esac
+done < <(tar -tzf "$TEMP_DIR/$ARCHIVE")
+
 tar -xzf "$TEMP_DIR/$ARCHIVE" -C "$TEMP_DIR"
 SOURCE_ROOT="$TEMP_DIR/ai-optimizer-${VERSION}"
+[ ! -L "$SOURCE_ROOT" ] || {
+  echo "Release root must not be a symlink." >&2
+  exit 1
+}
 [ -x "$SOURCE_ROOT/bin/ai-optimizer" ] || {
   echo "Release archive is missing bin/ai-optimizer." >&2
   exit 1
@@ -119,7 +139,12 @@ if [ -e "$LINK_PATH" ] || [ -L "$LINK_PATH" ]; then
   fi
 fi
 
-ln -sfn "$INSTALL_ROOT/bin/ai-optimizer" "$LINK_PATH"
+if ! ln -sfn "$INSTALL_ROOT/bin/ai-optimizer" "$LINK_PATH"; then
+  rm -rf "$INSTALL_ROOT"
+  [ ! -e "$BACKUP_ROOT" ] || mv "$BACKUP_ROOT" "$INSTALL_ROOT"
+  echo "Command link failed; the previous version was restored." >&2
+  exit 1
+fi
 rm -rf "$BACKUP_ROOT"
 
 echo "Installed AI Optimizer $VERSION."
