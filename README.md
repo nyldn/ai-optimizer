@@ -33,7 +33,7 @@ skills, repositories, or launchd unless you explicitly add `--schedule`.
 Example:
 
 ```text
-AI Optimizer 0.1.2
+AI Optimizer 0.1.3
 
 [PASS] system.macos - macOS is supported
 [PASS] tools.claude.present - Claude Code is available
@@ -74,6 +74,8 @@ ai-optimizer schedule
 The default is 21:00 local time. AI Optimizer accepts 19:00 through 02:00 and
 checks the time again when launchd actually starts the process. A Mac waking
 later in the morning records `skipped_outside_window` and performs no scan.
+Configuration, receipts, and scheduler logs are stored with owner-only
+permissions.
 
 AI Optimizer owns only:
 
@@ -114,7 +116,7 @@ The direct path verifies the installer before it runs, then the installer
 verifies the release archive before changing live paths:
 
 ```sh
-VERSION=0.1.2
+VERSION=0.1.3
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh"
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh.sha256"
 shasum -a 256 -c install.sh.sha256

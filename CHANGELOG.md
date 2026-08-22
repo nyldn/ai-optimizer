@@ -3,6 +3,12 @@
 All notable changes are documented here. AI Optimizer follows semantic
 versioning.
 
+## 0.1.3 - 2026-08-22
+
+- Pre-create scheduled-maintenance logs with owner-only permissions and repair
+  older product-owned log modes without truncating their contents.
+- Refuse symlinked log targets before launchd registration.
+
 ## 0.1.2 - 2026-08-22
 
 - Treat skill names intentionally shared across Claude, Codex, and agent roots
