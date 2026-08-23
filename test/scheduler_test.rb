@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "digest"
 require_relative "test_helper"
 
 class SchedulerTest < Minitest::Test
@@ -25,16 +26,15 @@ class SchedulerTest < Minitest::Test
       assert_includes plist, "io.github.nyldn.ai-optimizer.daily"
       assert_includes plist, "<integer>21</integer>"
       refute_includes plist, "com.chris"
-      wrapper_path = File.join(dir, "data", "bin", "ai-optimizer-maintenance")
+      wrapper_digest = Digest::SHA256.hexdigest("/usr/local/bin/ai-optimizer")[0, 12]
+      wrapper_path = File.join(dir, "data", "bin", "ai-optimizer-maintenance-v1-#{wrapper_digest}")
       expected_program = %r{<key>ProgramArguments</key>\s*<array>\s*<string>#{Regexp.escape(wrapper_path)}</string>\s*</array>}
       assert_match expected_program, plist
-      assert_match %r{<key>AI_OPTIMIZER_EXECUTABLE</key>\s*<string>/usr/local/bin/ai-optimizer</string>}, plist
-      assert_equal "#!/bin/sh\nexec \"$AI_OPTIMIZER_EXECUTABLE\" run-maintenance\n", File.read(wrapper_path)
+      refute_includes plist, "AI_OPTIMIZER_EXECUTABLE"
+      refute_includes plist, "/usr/local/bin/ai-optimizer"
+      assert_equal "#!/bin/sh\nexec '/usr/local/bin/ai-optimizer' run-maintenance\n", File.read(wrapper_path)
       assert_equal 0o700, File.stat(File.dirname(wrapper_path)).mode & 0o777
       assert_equal 0o700, File.stat(wrapper_path).mode & 0o777
-      stdout, stderr, status = Open3.capture3({ "AI_OPTIMIZER_EXECUTABLE" => "/usr/bin/printf" }, wrapper_path)
-      assert status.success?, stderr
-      assert_equal "run-maintenance", stdout
       scheduler.schedule(hour: 21, minute: 0)
       assert File.file?(scheduler.plist_path)
       %w[daily.out.log daily.err.log].each do |name|
@@ -101,15 +101,68 @@ class SchedulerTest < Minitest::Test
       FileUtils.mkdir_p(bin_dir)
       external = File.join(dir, "external-launcher")
       File.write(external, "must remain unchanged\n")
-      File.symlink(external, File.join(bin_dir, "ai-optimizer-maintenance"))
+      executable = "/usr/local/bin/ai-optimizer"
+      wrapper_digest = Digest::SHA256.hexdigest(executable)[0, 12]
+      wrapper_path = File.join(bin_dir, "ai-optimizer-maintenance-v1-#{wrapper_digest}")
+      File.symlink(external, wrapper_path)
       scheduler = AIOptimizer::Scheduler.new(
         launch_agents_dir: File.join(dir, "agents"), data_dir: data_dir,
-        executable: "/usr/local/bin/ai-optimizer", uid: 501,
+        executable: executable, uid: 501,
         runner: TestSupport::FakeCommandRunner.new
       )
 
       assert_raises(AIOptimizer::OwnershipError) { scheduler.schedule(hour: 21, minute: 0) }
       assert_equal "must remain unchanged\n", File.read(external)
+    end
+  end
+
+  def test_maintenance_launcher_executes_the_exact_configured_path
+    in_tmpdir do |dir|
+      agents = File.join(dir, "agents")
+      executable_dir = File.join(dir, "tool's bin-José")
+      FileUtils.mkdir_p(executable_dir)
+      executable = File.join(executable_dir, "ai optimizer")
+      File.write(executable, "#!/bin/sh\nprintf '%s' \"$1\"\n")
+      File.chmod(0o700, executable)
+      plist_path = File.join(agents, "io.github.nyldn.ai-optimizer.daily.plist")
+      runner = TestSupport::FakeCommandRunner.new(
+        "/bin/launchctl print gui/501/io.github.nyldn.ai-optimizer.daily" => { status: 1, stdout: "", stderr: "not found" },
+        "/usr/bin/plutil -lint #{File.join(agents, ".io.github.nyldn.ai-optimizer.daily.plist.tmp")}" => { status: 0, stdout: "OK", stderr: "" },
+        "/bin/launchctl bootstrap gui/501 #{plist_path}" => { status: 0, stdout: "", stderr: "" }
+      )
+      scheduler = AIOptimizer::Scheduler.new(
+        launch_agents_dir: agents, data_dir: File.join(dir, "data"),
+        executable: executable, uid: 501, runner: runner
+      )
+
+      scheduler.schedule(hour: 21, minute: 0)
+      scheduler.schedule(hour: 21, minute: 0)
+
+      wrapper_digest = Digest::SHA256.hexdigest(executable)[0, 12]
+      wrapper_path = File.join(dir, "data", "bin", "ai-optimizer-maintenance-v1-#{wrapper_digest}")
+      stdout, stderr, status = Open3.capture3(wrapper_path)
+      assert status.success?, stderr
+      assert_equal "run-maintenance", stdout
+    end
+  end
+
+  def test_schedule_refuses_a_drifted_maintenance_launcher
+    in_tmpdir do |dir|
+      data_dir = File.join(dir, "data")
+      bin_dir = File.join(data_dir, "bin")
+      FileUtils.mkdir_p(bin_dir)
+      executable = "/usr/local/bin/ai-optimizer"
+      wrapper_digest = Digest::SHA256.hexdigest(executable)[0, 12]
+      wrapper_path = File.join(bin_dir, "ai-optimizer-maintenance-v1-#{wrapper_digest}")
+      File.write(wrapper_path, "unowned content\n")
+      scheduler = AIOptimizer::Scheduler.new(
+        launch_agents_dir: File.join(dir, "agents"), data_dir: data_dir,
+        executable: executable, uid: 501,
+        runner: TestSupport::FakeCommandRunner.new
+      )
+
+      assert_raises(AIOptimizer::OwnershipError) { scheduler.schedule(hour: 21, minute: 0) }
+      assert_equal "unowned content\n", File.read(wrapper_path)
     end
   end
 
