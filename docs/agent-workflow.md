@@ -77,8 +77,8 @@ imports the same contract.
 
 ## Storage requests
 
-Run storage inventory only when the user asks about storage or the latest
-evening receipt reports a warning:
+Make storage inventory the first command only when the user asks about storage
+or the latest evening receipt reports a warning:
 
 ```sh
 ./bin/ai-env-optimizer storage --json

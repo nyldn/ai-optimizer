@@ -16,7 +16,17 @@ through `CLAUDE.md`.
 
 ## Operator workflow
 
-1. From this repository root, run the read-only handshake:
+1. Choose the first read-only command from the user's request.
+
+   For a storage request, make the first command:
+
+   ```sh
+   ./bin/ai-env-optimizer storage --json
+   ```
+
+   Use it only when the user asks about storage or an evening receipt already
+   reports a storage warning. The inventory is read-only and path-free. For
+   other environment work, run the general handshake:
 
    ```sh
    ./bin/ai-env-optimizer agent-context --json
@@ -26,12 +36,10 @@ through `CLAUDE.md`.
    workspace container. Do not run `setup`, scheduling, package-manager, or
    repair commands merely to gather context.
 
-   Run `./bin/ai-env-optimizer storage --json` only when the user asks about storage
-   or an evening receipt already reports a storage warning. Inventory is
-   read-only and path-free.
-
-2. Read `overall_status`, `prioritized_actions`, and both embedded reports.
-   Treat priorities as:
+2. Read the selected command's evidence. For `agent-context`, read
+   `overall_status`, `prioritized_actions`, and both embedded reports. For
+   `storage`, read `summary` and each classified source; do not ask for or infer
+   hidden paths. Treat diagnostic priorities as:
 
    - `P0`: required product/platform failure or unknown state;
    - `P1`: non-required failure or unknown state;

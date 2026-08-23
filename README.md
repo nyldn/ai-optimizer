@@ -102,9 +102,9 @@ priorities, remediation, safety rules, and completion checks. It is read-only.
 See [Working with Codex and Claude Code](docs/agent-workflow.md) for the schema,
 recommended prompt, and repair loop.
 
-For a storage request, both agents are instructed to run the read-only
-`./bin/ai-env-optimizer storage --json` inventory after the handshake. They do
-not infer cleanup permission from a warning or preview token.
+For a storage request, both agents are instructed to start with the read-only
+`./bin/ai-env-optimizer storage --json` inventory. They do not infer cleanup
+permission from a warning or preview token.
 
 ## Storage health and recoverable cleanup
 

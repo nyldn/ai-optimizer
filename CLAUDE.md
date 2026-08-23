@@ -14,5 +14,5 @@ changes, make the smallest reversible fix, verify it with the owning tool, and
 re-run the handshake before reporting completion.
 
 For storage requests, follow the protected preview/apply workflow in
-`AGENTS.md`. Start with `./bin/ai-env-optimizer storage --json`; never treat a
-preview token as authorization to apply cleanup.
+`AGENTS.md`. Make `./bin/ai-env-optimizer storage --json` the first command;
+never treat a preview token as authorization to apply cleanup.

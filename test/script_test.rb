@@ -53,6 +53,7 @@ class ScriptTest < Minitest::Test
     assert_includes troubleshooting, "~/.Trash/ai-env-optimizer-<timestamp>-<token-prefix>"
     assert_includes privacy, "original paths or filenames"
     assert_includes agents, "only when the user asks about storage"
+    assert_includes agents, "For a storage request, make the first command"
     assert_includes agents, "Never infer permission to apply cleanup from a preview token"
   end
 end
