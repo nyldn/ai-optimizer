@@ -12,4 +12,17 @@ class ScriptTest < Minitest::Test
       refute_match(/\s\+\s{2,}/, File.read(path), "patch marker artifact in #{path}")
     end
   end
+
+  def test_codex_and_claude_entrypoints_share_the_agent_context_handshake
+    agents = File.read(File.join(ROOT, "AGENTS.md"))
+    claude = File.read(File.join(ROOT, "CLAUDE.md"))
+
+    assert_includes agents, "./bin/ai-optimizer agent-context --json"
+    assert_includes agents, "Operator workflow"
+    assert_includes agents, "Development workflow"
+    assert_includes claude, "AGENTS.md"
+    assert_includes claude, "./bin/ai-optimizer agent-context --json"
+    assert_includes File.read(File.join(ROOT, "docs", "architecture.md")), "Agent context"
+    assert_includes File.read(File.join(ROOT, "docs", "privacy.md")), "`doctor`, `scan`, and `agent-context` do not write"
+  end
 end

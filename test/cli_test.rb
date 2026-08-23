@@ -18,6 +18,7 @@ class CLITest < Minitest::Test
     assert status.success?, stderr
     assert_includes stdout, "doctor"
     assert_includes stdout, "schedule"
+    assert_includes stdout, "doctor, scan, and agent-context are read-only"
   end
 
   def test_doctor_json_is_one_document
@@ -26,6 +27,22 @@ class CLITest < Minitest::Test
       assert_includes [0, 1], status.exitstatus, stderr
       payload = JSON.parse(stdout)
       assert payload.key?("findings")
+      assert_empty stderr
+    end
+  end
+
+  def test_agent_context_json_is_one_actionable_document
+    in_tmpdir do |dir|
+      stdout, stderr, status = run_cli(
+        "agent-context", "--json", "--workspace-root", dir,
+        env: { "AI_OPTIMIZER_DATA_DIR" => File.join(dir, "data") }
+      )
+      assert_includes [0, 1], status.exitstatus, stderr
+      payload = JSON.parse(stdout)
+      assert_equal "read_only_advisor", payload.fetch("mode")
+      assert payload.fetch("agent_contract").fetch("workflow").any?
+      assert payload.fetch("reports").fetch("doctor").fetch("findings").is_a?(Array)
+      assert payload.fetch("reports").fetch("scan").fetch("findings").is_a?(Array)
       assert_empty stderr
     end
   end

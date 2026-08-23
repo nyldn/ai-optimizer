@@ -27,13 +27,16 @@ skills, repositories, or launchd unless you explicitly add `--schedule`.
 - A `scan` that summarizes Git workspace coverage without reporting repository
   names or file contents.
 - The same stable findings in readable text or one clean JSON document.
+- A shared `agent-context` handshake that tells Codex or Claude Code what to
+  inspect, how to prioritize findings, where mutation authority stops, and how
+  to verify repairs.
 - Opt-in evening diagnostics through one product-owned user launch agent.
 - No telemetry and no autonomous code repair.
 
 Example:
 
 ```text
-AI Optimizer 0.1.7
+AI Optimizer 0.1.8
 
 [PASS] system.macos - macOS is supported
 [PASS] tools.claude.present - Claude Code is available
@@ -53,6 +56,7 @@ automation.
 ai-optimizer setup [--workspace-root PATH] [--schedule]
 ai-optimizer doctor [--json] [--strict]
 ai-optimizer scan [--json] [--strict] [--workspace-root PATH]
+ai-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
 ai-optimizer report [--json]
 ai-optimizer schedule [--hour H] [--minute M]
 ai-optimizer schedule status
@@ -62,6 +66,21 @@ ai-optimizer version
 
 The default workspace root is `~/git` when it exists, otherwise the current
 directory.
+
+## Use with Codex or Claude Code
+
+Clone or open this repository, then start either agent from its root. Codex
+automatically reads `AGENTS.md`; Claude Code loads `CLAUDE.md`, which imports
+the same operating contract. Both are directed to begin with:
+
+```sh
+./bin/ai-optimizer agent-context --json
+```
+
+The handshake combines current doctor and workspace evidence with deduplicated
+priorities, remediation, safety rules, and completion checks. It is read-only.
+See [Working with Codex and Claude Code](docs/agent-workflow.md) for the schema,
+recommended prompt, and repair loop.
 
 ## Evening maintenance
 
@@ -114,7 +133,7 @@ ai-optimizer unschedule
 
 ## Privacy and mutation boundary
 
-`doctor` and `scan` are read-only. Reports contain status identifiers,
+`doctor`, `scan`, and `agent-context` are read-only. Reports contain status identifiers,
 counts, tool versions, and remediation. They do not contain environment values,
 command arguments, MCP endpoints, tokens, workspace names, or workspace file
 contents.
@@ -138,7 +157,7 @@ The direct path verifies the installer before it runs, then the installer
 verifies the release archive before changing live paths:
 
 ```sh
-VERSION=0.1.7
+VERSION=0.1.8
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh"
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh.sha256"
 shasum -a 256 -c install.sh.sha256

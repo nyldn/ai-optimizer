@@ -3,6 +3,15 @@
 All notable changes are documented here. AI Optimizer follows semantic
 versioning.
 
+## 0.1.8 - 2026-08-23
+
+- Add a read-only `agent-context` handshake with embedded doctor and workspace
+  reports, deduplicated priorities, authorization boundaries, and completion
+  gates for coding agents.
+- Give Codex and Claude Code one shared repository-root operating contract,
+  including distinct environment-operator and product-development workflows.
+- Document and test the complete agent onboarding and verification loop.
+
 ## 0.1.7 - 2026-08-23
 
 - Warn (and therefore fail `--strict`) when a linked skill directory cannot be
