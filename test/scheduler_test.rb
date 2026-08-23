@@ -25,13 +25,18 @@ class SchedulerTest < Minitest::Test
       assert_includes plist, "io.github.nyldn.ai-optimizer.daily"
       assert_includes plist, "<integer>21</integer>"
       refute_includes plist, "com.chris"
-      expected_program = %r{
-        <key>ProgramArguments</key>\s*<array>\s*
-        <string>/usr/bin/env</string>\s*
-        <string>/usr/local/bin/ai-optimizer</string>\s*
-        <string>run-maintenance</string>
-      }x
+      wrapper_path = File.join(dir, "data", "bin", "ai-optimizer-maintenance")
+      expected_program = %r{<key>ProgramArguments</key>\s*<array>\s*<string>#{Regexp.escape(wrapper_path)}</string>\s*</array>}
       assert_match expected_program, plist
+      assert_match %r{<key>AI_OPTIMIZER_EXECUTABLE</key>\s*<string>/usr/local/bin/ai-optimizer</string>}, plist
+      assert_equal "#!/bin/sh\nexec \"$AI_OPTIMIZER_EXECUTABLE\" run-maintenance\n", File.read(wrapper_path)
+      assert_equal 0o700, File.stat(File.dirname(wrapper_path)).mode & 0o777
+      assert_equal 0o700, File.stat(wrapper_path).mode & 0o777
+      stdout, stderr, status = Open3.capture3({ "AI_OPTIMIZER_EXECUTABLE" => "/usr/bin/printf" }, wrapper_path)
+      assert status.success?, stderr
+      assert_equal "run-maintenance", stdout
+      scheduler.schedule(hour: 21, minute: 0)
+      assert File.file?(scheduler.plist_path)
       %w[daily.out.log daily.err.log].each do |name|
         log_path = File.join(dir, "data", "logs", name)
         assert File.file?(log_path)
@@ -78,6 +83,25 @@ class SchedulerTest < Minitest::Test
       external = File.join(dir, "external.log")
       File.write(external, "must remain unchanged\n")
       File.symlink(external, File.join(log_dir, "daily.out.log"))
+      scheduler = AIOptimizer::Scheduler.new(
+        launch_agents_dir: File.join(dir, "agents"), data_dir: data_dir,
+        executable: "/usr/local/bin/ai-optimizer", uid: 501,
+        runner: TestSupport::FakeCommandRunner.new
+      )
+
+      assert_raises(AIOptimizer::OwnershipError) { scheduler.schedule(hour: 21, minute: 0) }
+      assert_equal "must remain unchanged\n", File.read(external)
+    end
+  end
+
+  def test_schedule_refuses_a_symlinked_maintenance_launcher
+    in_tmpdir do |dir|
+      data_dir = File.join(dir, "data")
+      bin_dir = File.join(data_dir, "bin")
+      FileUtils.mkdir_p(bin_dir)
+      external = File.join(dir, "external-launcher")
+      File.write(external, "must remain unchanged\n")
+      File.symlink(external, File.join(bin_dir, "ai-optimizer-maintenance"))
       scheduler = AIOptimizer::Scheduler.new(
         launch_agents_dir: File.join(dir, "agents"), data_dir: data_dir,
         executable: "/usr/local/bin/ai-optimizer", uid: 501,

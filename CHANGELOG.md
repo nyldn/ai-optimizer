@@ -3,11 +3,20 @@
 All notable changes are documented here. AI Optimizer follows semantic
 versioning.
 
+## 0.1.5 - 2026-08-22
+
+- Replace the short-lived `/usr/bin/env` launch item with a stable,
+  product-owned maintenance launcher under Application Support.
+- Keep the exact AI Optimizer executable out of launchd's program arguments so
+  Homebrew keg replacement does not unregister an opted-in schedule.
+- Refuse symlinked launcher targets and install the launcher atomically with
+  owner-only permissions.
+
 ## 0.1.4 - 2026-08-22
 
-- Keep opted-in launchd jobs registered across Homebrew binary replacement by
-  using immutable `/usr/bin/env` as the launch program and passing the exact AI
-  Optimizer executable as an argument.
+- Use immutable `/usr/bin/env` as the launch program. This was superseded by
+  v0.1.5 after live Background Task Management evidence showed macOS removed
+  the generic `env` launch item.
 
 ## 0.1.3 - 2026-08-22
 

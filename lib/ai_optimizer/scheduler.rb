@@ -7,6 +7,11 @@ module AIOptimizer
   class Scheduler
     LABEL = "io.github.nyldn.ai-optimizer.daily"
     LOG_FILES = %w[daily.out.log daily.err.log].freeze
+    WRAPPER_NAME = "ai-optimizer-maintenance"
+    WRAPPER_CONTENT = <<~'SH'.freeze
+      #!/bin/sh
+      exec "$AI_OPTIMIZER_EXECUTABLE" run-maintenance
+    SH
 
     attr_reader :launch_agents_dir, :data_dir, :executable, :uid, :runner
 
@@ -29,6 +34,7 @@ module AIOptimizer
       ensure_owned_paths
       FileUtils.mkdir_p(launch_agents_dir, mode: 0o700)
       secure_log_files
+      write_maintenance_wrapper
 
       previous_content = File.file?(plist_path) ? File.binread(plist_path) : nil
 
@@ -98,7 +104,9 @@ module AIOptimizer
       return unless File.file?(plist_path)
 
       content = File.binread(plist_path, 64_000)
-      owned = content.include?("<string>#{LABEL}</string>") && content.include?("<string>run-maintenance</string>")
+      command_owned = content.include?("<string>run-maintenance</string>") ||
+                      content.include?("/#{WRAPPER_NAME}</string>")
+      owned = content.include?("<string>#{LABEL}</string>") && command_owned
       raise OwnershipError, "existing launch agent is not provably owned by AI Optimizer" unless owned
     end
 
@@ -134,6 +142,29 @@ module AIOptimizer
       raise OwnershipError, "refusing to use a symlinked log file"
     end
 
+    def maintenance_wrapper_path
+      File.join(data_dir, "bin", WRAPPER_NAME)
+    end
+
+    def write_maintenance_wrapper
+      bin_dir = File.dirname(maintenance_wrapper_path)
+      raise OwnershipError, "maintenance bin directory must not be a symlink" if File.symlink?(bin_dir)
+      raise OwnershipError, "refusing to replace a symlinked maintenance launcher" if File.symlink?(maintenance_wrapper_path)
+
+      FileUtils.mkdir_p(bin_dir, mode: 0o700)
+      File.chmod(0o700, bin_dir)
+      temporary = File.join(bin_dir, ".#{WRAPPER_NAME}.#{Process.pid}.tmp")
+      File.open(temporary, File::WRONLY | File::CREAT | File::EXCL, 0o700) do |file|
+        file.write(WRAPPER_CONTENT)
+        file.flush
+        file.fsync
+      end
+      File.chmod(0o700, temporary)
+      File.rename(temporary, maintenance_wrapper_path)
+    ensure
+      FileUtils.rm_f(temporary) if defined?(temporary) && temporary && File.exist?(temporary)
+    end
+
     def loaded?
       runner.run(["/bin/launchctl", "print", service_target], timeout: 5).success?
     end
@@ -157,9 +188,7 @@ module AIOptimizer
           <string>#{LABEL}</string>
           <key>ProgramArguments</key>
           <array>
-            <string>/usr/bin/env</string>
-            <string>#{escape(executable)}</string>
-            <string>run-maintenance</string>
+            <string>#{escape(maintenance_wrapper_path)}</string>
           </array>
           <key>StartCalendarInterval</key>
           <dict>
@@ -176,6 +205,8 @@ module AIOptimizer
             <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
             <key>AI_OPTIMIZER_DATA_DIR</key>
             <string>#{escape(data_dir)}</string>
+            <key>AI_OPTIMIZER_EXECUTABLE</key>
+            <string>#{escape(executable)}</string>
           </dict>
           <key>StandardOutPath</key>
           <string>#{escape(File.join(log_dir, "daily.out.log"))}</string>
