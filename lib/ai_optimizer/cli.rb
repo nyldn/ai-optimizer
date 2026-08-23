@@ -13,6 +13,7 @@ module AIOptimizer
         ai-optimizer setup [--workspace-root PATH] [--schedule]
         ai-optimizer doctor [--json] [--strict]
         ai-optimizer scan [--json] [--strict] [--workspace-root PATH]
+        ai-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
         ai-optimizer report [--json]
         ai-optimizer schedule [--hour H] [--minute M] [--force-outside-window]
         ai-optimizer schedule status
@@ -20,7 +21,7 @@ module AIOptimizer
         ai-optimizer version
         ai-optimizer help
 
-      doctor and scan are read-only. Scheduling is opt-in and owns only:
+      doctor, scan, and agent-context are read-only. Scheduling is opt-in and owns only:
         #{Scheduler::LABEL}
     HELP
 
@@ -55,6 +56,8 @@ module AIOptimizer
         run_diagnostic(args, Doctor)
       when "scan"
         run_diagnostic(args, Scanner)
+      when "agent-context"
+        run_agent_context(args)
       when "setup"
         run_setup(args)
       when "schedule"
@@ -116,6 +119,25 @@ module AIOptimizer
       end
       @stdout.puts("Ready. Run: ai-optimizer doctor")
       0
+    end
+
+    def run_agent_context(args)
+      options = { json: false, strict: false, workspace_root: nil }
+      parser = OptionParser.new do |opts|
+        opts.on("--json") { options[:json] = true }
+        opts.on("--strict") { options[:strict] = true }
+        opts.on("--workspace-root PATH") { |path| options[:workspace_root] = path }
+      end
+      parser.parse!(args)
+      require_no_args(args)
+
+      context = build_context(options[:workspace_root])
+      agent_context = AgentContext.new(
+        doctor_report: Doctor.new(context).run,
+        scan_report: Scanner.new(context).run
+      )
+      @stdout.write(options[:json] ? agent_context.to_json + "\n" : agent_context.to_text)
+      agent_context.exit_code(strict: options[:strict])
     end
 
     def run_schedule(args)

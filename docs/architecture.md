@@ -11,6 +11,7 @@ flowchart LR
     D --> E[Finding objects]
     E --> F[Human report]
     E --> G[JSON report]
+    G --> L[Agent context handshake]
     H[Explicit setup or schedule] --> I[Owned config and direct-install launchd state]
     J[Explicit brew services start] --> K[Homebrew-managed launchd state]
 ```
@@ -30,6 +31,14 @@ links. Human and JSON output render the same ordered finding collection.
 Statuses are `pass`, `warn`, `fail`, `info`, `skip`, and `unknown`.
 Required `fail` or `unknown` findings exit 1. A top-level internal failure
 exits 3.
+
+## Agent context
+
+`agent-context` runs the doctor and workspace scanner over one read-only check
+context. It embeds both redacted reports in a single JSON document, deduplicates
+actionable findings, assigns deterministic P0/P1/P2 priorities, and includes a
+static authorization and verification contract for Codex and Claude Code. It
+does not infer repair commands or introduce another mutation path.
 
 ## Ownership
 

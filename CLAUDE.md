@@ -1,5 +1,14 @@
 # AI Optimizer
 
-Read `AGENTS.md` first. Keep diagnostics observational, structured, redacted,
-and deterministic. Product writes must be explicit, contained, reversible, and
-covered by lifecycle tests.
+@AGENTS.md
+
+Follow `AGENTS.md` as the shared Codex/Claude contract. For any environment
+assessment, begin with the read-only repository handshake:
+
+```sh
+./bin/ai-optimizer agent-context --json
+```
+
+Do not infer repair authority from a diagnostic finding. If the user asked for
+changes, make the smallest reversible fix, verify it with the owning tool, and
+re-run the handshake before reporting completion.
