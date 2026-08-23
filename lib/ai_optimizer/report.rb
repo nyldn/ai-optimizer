@@ -26,6 +26,7 @@ module AIOptimizer
       {
         schema_version: 1,
         product: "ai-env-optimizer",
+        compatibility: { legacy_names: ["ai-optimizer"] },
         version: version,
         generated_at: generated_at.iso8601,
         summary: summary,

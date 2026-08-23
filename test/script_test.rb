@@ -36,6 +36,6 @@ class ScriptTest < Minitest::Test
     assert_includes install, "github.com/nyldn/ai-env-optimizer"
     assert_includes release, "dist/ai-env-optimizer-*.tar.gz"
     assert File.executable?(File.join(ROOT, "bin", "ai-env-optimizer"))
-    assert File.executable?(File.join(ROOT, "bin", "ai-optimizer"))
+    refute File.exist?(File.join(ROOT, "bin", "ai-optimizer"))
   end
 end

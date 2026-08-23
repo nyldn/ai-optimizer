@@ -4,7 +4,6 @@ require_relative "test_helper"
 
 class CLITest < Minitest::Test
   BIN = File.expand_path("../bin/ai-env-optimizer", __dir__)
-  LEGACY_BIN = File.expand_path("../bin/ai-optimizer", __dir__)
 
   def run_cli(*args, env: {})
     Open3.capture3(env, "/usr/bin/ruby", BIN, *args)
@@ -20,13 +19,6 @@ class CLITest < Minitest::Test
     assert_includes stdout, "doctor"
     assert_includes stdout, "schedule"
     assert_includes stdout, "doctor, scan, and agent-context are read-only"
-  end
-
-  def test_legacy_command_remains_a_working_alias
-    stdout, stderr, status = Open3.capture3("/usr/bin/ruby", LEGACY_BIN, "version")
-
-    assert status.success?, stderr
-    assert_equal "ai-env-optimizer #{AIOptimizer::VERSION}\n", stdout
   end
 
   def test_doctor_json_is_one_document

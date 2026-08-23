@@ -7,7 +7,6 @@ while IFS= read -r file; do
   /usr/bin/ruby -c "$file" >/dev/null
 done < <(find "$ROOT_DIR/lib" "$ROOT_DIR/test" -type f -name '*.rb' -print | sort)
 
-/usr/bin/ruby -c "$ROOT_DIR/bin/ai-optimizer" >/dev/null
 /usr/bin/ruby -c "$ROOT_DIR/bin/ai-env-optimizer" >/dev/null
 
 while IFS= read -r file; do

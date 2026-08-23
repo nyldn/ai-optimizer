@@ -73,8 +73,15 @@ env HOME="$LEGACY_HOME" AI_ENV_OPTIMIZER_RELEASE_BASE="file://$DIST_DIR" PATH="/
 [ ! -e "$LEGACY_HOME/.local/share/ai-env-optimizer" ]
 [ -f "$LEGACY_ROOT/.ai-env-optimizer-install" ]
 [ -L "$LEGACY_BIN_DIR/ai-env-optimizer" ]
+[ "$(readlink "$LEGACY_BIN_DIR/ai-optimizer")" = "$LEGACY_ROOT/bin/ai-env-optimizer" ]
 [ "$("$LEGACY_BIN_DIR/ai-env-optimizer" version)" = "ai-env-optimizer $VERSION" ]
 [ "$("$LEGACY_BIN_DIR/ai-optimizer" version)" = "ai-env-optimizer $VERSION" ]
+
+env HOME="$LEGACY_HOME" AI_ENV_OPTIMIZER_RELEASE_BASE="file://$DIST_DIR" PATH="/usr/bin:/bin" /bin/bash "$ROOT_DIR/install.sh" --version "$VERSION" >/dev/null
+
+[ ! -e "$LEGACY_HOME/.local/share/ai-env-optimizer" ]
+[ -f "$LEGACY_ROOT/.ai-env-optimizer-install" ]
+[ "$("$LEGACY_BIN_DIR/ai-env-optimizer" version)" = "ai-env-optimizer $VERSION" ]
 
 env HOME="$LEGACY_HOME" AI_ENV_OPTIMIZER_DATA_DIR="$TEST_ROOT/legacy-data" AI_ENV_OPTIMIZER_LAUNCH_AGENTS_DIR="$TEST_ROOT/legacy-agents" /bin/bash "$LEGACY_ROOT/scripts/uninstall.sh" --force >/dev/null
 

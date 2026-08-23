@@ -54,6 +54,7 @@ module AIOptimizer
       {
         "schema_version" => 1,
         "product" => "ai-env-optimizer",
+        "compatibility" => { "legacy_names" => ["ai-optimizer"] },
         "generated_at" => time.utc.iso8601
       }
     end

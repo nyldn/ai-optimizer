@@ -24,6 +24,8 @@ class ReportTest < Minitest::Test
     )
     payload = JSON.parse(report.to_json)
 
+    assert_equal "ai-env-optimizer", payload.fetch("product")
+    assert_includes payload.fetch("compatibility").fetch("legacy_names"), "ai-optimizer"
     assert_equal %w[system.macos tools.optional], payload.fetch("findings").map { |item| item.fetch("id") }
     assert_equal({ "pass" => 1, "warn" => 1, "fail" => 0, "info" => 0, "skip" => 0, "unknown" => 0 }, payload.fetch("summary"))
     assert_includes report.to_text(color: false), "system.macos"

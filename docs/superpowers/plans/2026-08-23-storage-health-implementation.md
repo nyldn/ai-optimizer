@@ -775,10 +775,9 @@ class AiEnvOptimizer < Formula
   depends_on "ruby"
 
   def install
-    %w[ai-env-optimizer ai-optimizer].each do |command|
-      inreplace "bin/#{command}", "#!/usr/bin/env ruby", "#!#{formula_opt_bin("ruby")}/ruby"
-    end
-    bin.install "bin/ai-env-optimizer", "bin/ai-optimizer"
+    inreplace "bin/ai-env-optimizer", "#!/usr/bin/env ruby", "#!#{formula_opt_bin("ruby")}/ruby"
+    bin.install "bin/ai-env-optimizer"
+    bin.install_symlink "ai-env-optimizer" => "ai-optimizer"
     lib.install "lib/ai_optimizer.rb", "lib/ai_optimizer"
     prefix.install "VERSION"
   end

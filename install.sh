@@ -40,7 +40,8 @@ elif [ -n "${AI_OPTIMIZER_PREFIX:-}" ]; then
   INSTALL_ROOT="$AI_OPTIMIZER_PREFIX"
 elif [ -e "$CANONICAL_INSTALL_ROOT" ]; then
   INSTALL_ROOT="$CANONICAL_INSTALL_ROOT"
-elif [ -f "$LEGACY_INSTALL_ROOT/.ai-optimizer-install" ]; then
+elif [ -f "$LEGACY_INSTALL_ROOT/.ai-env-optimizer-install" ] ||
+     [ -f "$LEGACY_INSTALL_ROOT/.ai-optimizer-install" ]; then
   INSTALL_ROOT="$LEGACY_INSTALL_ROOT"
 else
   INSTALL_ROOT="$CANONICAL_INSTALL_ROOT"
@@ -125,16 +126,24 @@ CANONICAL_LINK="$BIN_DIR/ai-env-optimizer"
 LEGACY_LINK="$BIN_DIR/ai-optimizer"
 validate_existing_link() {
   link_path="$1"
-  expected_target="$2"
+  shift
   if [ -e "$link_path" ] || [ -L "$link_path" ]; then
-    if [ ! -L "$link_path" ] || [ "$(readlink "$link_path")" != "$expected_target" ]; then
+    [ -L "$link_path" ] || {
       echo "Refusing to replace unrelated $link_path." >&2
       exit 1
-    fi
+    }
+    link_target="$(readlink "$link_path")"
+    for expected_target in "$@"; do
+      [ "$link_target" != "$expected_target" ] || return 0
+    done
+    echo "Refusing to replace unrelated $link_path." >&2
+    exit 1
   fi
 }
 validate_existing_link "$CANONICAL_LINK" "$INSTALL_ROOT/bin/ai-env-optimizer"
-validate_existing_link "$LEGACY_LINK" "$INSTALL_ROOT/bin/ai-optimizer"
+validate_existing_link "$LEGACY_LINK" \
+  "$INSTALL_ROOT/bin/ai-env-optimizer" \
+  "$INSTALL_ROOT/bin/ai-optimizer"
 
 mv "$SOURCE_ROOT" "$STAGED_ROOT"
 printf 'owner=ai-env-optimizer\nversion=%s\n' "$VERSION" > "$STAGED_ROOT/.ai-env-optimizer-install"
@@ -150,7 +159,7 @@ if ! mv "$STAGED_ROOT" "$INSTALL_ROOT"; then
 fi
 
 if ! ln -sfn "$INSTALL_ROOT/bin/ai-env-optimizer" "$CANONICAL_LINK" ||
-   ! ln -sfn "$INSTALL_ROOT/bin/ai-optimizer" "$LEGACY_LINK"; then
+   ! ln -sfn "$INSTALL_ROOT/bin/ai-env-optimizer" "$LEGACY_LINK"; then
   rm -rf "$INSTALL_ROOT"
   [ ! -e "$BACKUP_ROOT" ] || mv "$BACKUP_ROOT" "$INSTALL_ROOT"
   echo "Command links failed; the previous version was restored." >&2

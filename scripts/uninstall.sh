@@ -64,7 +64,9 @@ echo "  $INSTALL_ROOT"
 if [ -L "$CANONICAL_LINK" ] && [ "$(readlink "$CANONICAL_LINK")" = "$INSTALL_ROOT/bin/ai-env-optimizer" ]; then
   echo "  $CANONICAL_LINK"
 fi
-if [ -L "$LEGACY_LINK" ] && [ "$(readlink "$LEGACY_LINK")" = "$INSTALL_ROOT/bin/ai-optimizer" ]; then
+if [ -L "$LEGACY_LINK" ] &&
+   { [ "$(readlink "$LEGACY_LINK")" = "$INSTALL_ROOT/bin/ai-env-optimizer" ] ||
+     [ "$(readlink "$LEGACY_LINK")" = "$INSTALL_ROOT/bin/ai-optimizer" ]; }; then
   echo "  $LEGACY_LINK"
 fi
 if [ "$KEEP_STATE" -eq 0 ] && [ -f "$DATA_DIR/state-manifest.json" ] &&
@@ -90,7 +92,9 @@ fi
 if [ -L "$CANONICAL_LINK" ] && [ "$(readlink "$CANONICAL_LINK")" = "$INSTALL_ROOT/bin/ai-env-optimizer" ]; then
   rm -f "$CANONICAL_LINK"
 fi
-if [ -L "$LEGACY_LINK" ] && [ "$(readlink "$LEGACY_LINK")" = "$INSTALL_ROOT/bin/ai-optimizer" ]; then
+if [ -L "$LEGACY_LINK" ] &&
+   { [ "$(readlink "$LEGACY_LINK")" = "$INSTALL_ROOT/bin/ai-env-optimizer" ] ||
+     [ "$(readlink "$LEGACY_LINK")" = "$INSTALL_ROOT/bin/ai-optimizer" ]; }; then
   rm -f "$LEGACY_LINK"
 fi
 
