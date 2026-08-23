@@ -17,7 +17,7 @@ SHA-256 checksums and GitHub build provenance.
 
 The direct-install runtime supports macOS's system Ruby 2.6 so it can start
 without bootstrapping another language runtime. Ruby 2.6 is upstream end-of-life;
-AI Optimizer therefore uses only the operating-system Ruby standard library,
+AI Environment Optimizer therefore uses only the operating-system Ruby standard library,
 does not open a listening service, does not parse untrusted network responses in
 normal doctor runs, and also tests under Homebrew's maintained Ruby. This
 tradeoff will be revisited if macOS removes the system runtime.

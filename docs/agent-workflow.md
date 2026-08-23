@@ -1,17 +1,17 @@
 # Working with Codex and Claude Code
 
-AI Optimizer gives coding agents a deterministic, read-only starting point.
+AI Environment Optimizer gives coding agents a deterministic, read-only starting point.
 The repository's `AGENTS.md` and `CLAUDE.md` route both Codex and Claude Code to
 the same command:
 
 ```sh
-./bin/ai-optimizer agent-context --json
+./bin/ai-env-optimizer agent-context --json
 ```
 
 Use the installed command instead when you are not working from a checkout:
 
 ```sh
-ai-optimizer agent-context --json
+ai-env-optimizer agent-context --json
 ```
 
 ## What the handshake returns

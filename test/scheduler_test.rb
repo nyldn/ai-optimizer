@@ -31,6 +31,7 @@ class SchedulerTest < Minitest::Test
       expected_program = %r{<key>ProgramArguments</key>\s*<array>\s*<string>#{Regexp.escape(wrapper_path)}</string>\s*</array>}
       assert_match expected_program, plist
       refute_includes plist, "AI_OPTIMIZER_EXECUTABLE"
+      assert_includes plist, "AI_ENV_OPTIMIZER_DATA_DIR"
       refute_includes plist, "/usr/local/bin/ai-optimizer"
       assert_equal "#!/bin/sh\nexec '/usr/local/bin/ai-optimizer' run-maintenance\n", File.read(wrapper_path)
       assert_equal 0o700, File.stat(File.dirname(wrapper_path)).mode & 0o777

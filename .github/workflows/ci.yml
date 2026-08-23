@@ -35,12 +35,12 @@ jobs:
         run: |
           first="$RUNNER_TEMP/release-a"
           second="$RUNNER_TEMP/release-b"
-          AI_OPTIMIZER_DIST_DIR="$first" scripts/build-release.sh
-          AI_OPTIMIZER_DIST_DIR="$second" scripts/build-release.sh
-          cmp "$first/ai-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz" "$second/ai-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz"
+          AI_ENV_OPTIMIZER_DIST_DIR="$first" scripts/build-release.sh
+          AI_ENV_OPTIMIZER_DIST_DIR="$second" scripts/build-release.sh
+          cmp "$first/ai-env-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz" "$second/ai-env-optimizer-$(tr -d '[:space:]' < VERSION).tar.gz"
       - name: Verify install and uninstall round trip
         run: |
-          AI_OPTIMIZER_DIST_DIR="$RUNNER_TEMP/release-a" test/install_test.sh
+          AI_ENV_OPTIMIZER_DIST_DIR="$RUNNER_TEMP/release-a" test/install_test.sh
       - name: Scan Git history for secrets
         run: |
           brew install gitleaks

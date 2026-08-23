@@ -3,6 +3,23 @@
 require_relative "test_helper"
 
 class ConfigTest < Minitest::Test
+  def test_default_data_dir_prefers_canonical_path_for_new_users
+    in_tmpdir do |home|
+      expected = File.join(home, "Library", "Application Support", "io.github.nyldn.ai-env-optimizer")
+
+      assert_equal expected, AIOptimizer::Config.default_data_dir(home)
+    end
+  end
+
+  def test_default_data_dir_preserves_an_existing_legacy_install
+    in_tmpdir do |home|
+      legacy = File.join(home, "Library", "Application Support", "io.github.nyldn.ai-optimizer")
+      FileUtils.mkdir_p(legacy)
+
+      assert_equal legacy, AIOptimizer::Config.default_data_dir(home)
+    end
+  end
+
   def test_round_trip_uses_private_permissions_and_preserves_unknown_keys
     in_tmpdir do |dir|
       config = AIOptimizer::Config.new(data_dir: File.join(dir, "data"), default_workspace_root: dir)
@@ -10,7 +27,23 @@ class ConfigTest < Minitest::Test
 
       assert_equal true, config.load.fetch("future_key").fetch("enabled")
       assert_equal 0o600, File.stat(config.path).mode & 0o777
-      assert_equal "ai-optimizer", JSON.parse(File.read(config.manifest_path)).fetch("owner")
+      assert_equal "ai-env-optimizer", JSON.parse(File.read(config.manifest_path)).fetch("owner")
+    end
+  end
+
+  def test_existing_legacy_manifest_is_accepted_and_upgraded_on_save
+    in_tmpdir do |dir|
+      data_dir = File.join(dir, "data")
+      FileUtils.mkdir_p(data_dir)
+      File.write(
+        File.join(data_dir, "state-manifest.json"),
+        JSON.generate("schema_version" => 1, "owner" => "ai-optimizer", "version" => "0.1.8")
+      )
+      config = AIOptimizer::Config.new(data_dir: data_dir, default_workspace_root: dir)
+
+      config.save(config.defaults)
+
+      assert_equal "ai-env-optimizer", JSON.parse(File.read(config.manifest_path)).fetch("owner")
     end
   end
 

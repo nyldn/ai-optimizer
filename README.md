@@ -1,6 +1,7 @@
-# AI Optimizer
+# AI Environment Optimizer
 
-AI Optimizer is a read-only health check and narrowly owned maintenance layer
+AI Environment Optimizer (`ai-env-optimizer`) is a read-only health check and
+narrowly owned maintenance layer
 for macOS AI coding environments. It makes Claude Code, Codex, MCP servers,
 skills, and Git workspaces understandable without uploading your configuration
 or silently changing third-party tools.
@@ -12,9 +13,9 @@ Requires macOS 13 or later. Apple Silicon and Intel are both tested.
 Homebrew is the recommended installation path:
 
 ```sh
-brew install nyldn/tap/ai-optimizer
-ai-optimizer setup
-ai-optimizer doctor
+brew install nyldn/tap/ai-env-optimizer
+ai-env-optimizer setup
+ai-env-optimizer doctor
 ```
 
 `setup` saves local defaults. It does not change Claude Code, Codex, MCP,
@@ -23,7 +24,7 @@ skills, repositories, or launchd unless you explicitly add `--schedule`.
 ## What you get
 
 - A credential-free `doctor` for macOS, PATH, Claude Code, Codex, optional
-  companion tools, MCP configuration health, skills, and AI Optimizer state.
+  companion tools, MCP configuration health, skills, and product-owned state.
 - A `scan` that summarizes Git workspace coverage without reporting repository
   names or file contents.
 - The same stable findings in readable text or one clean JSON document.
@@ -36,7 +37,7 @@ skills, repositories, or launchd unless you explicitly add `--schedule`.
 Example:
 
 ```text
-AI Optimizer 0.1.8
+AI Environment Optimizer 0.2.0
 
 [PASS] system.macos - macOS is supported
 [PASS] tools.claude.present - Claude Code is available
@@ -53,19 +54,33 @@ automation.
 ## Commands
 
 ```text
-ai-optimizer setup [--workspace-root PATH] [--schedule]
-ai-optimizer doctor [--json] [--strict]
-ai-optimizer scan [--json] [--strict] [--workspace-root PATH]
-ai-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
-ai-optimizer report [--json]
-ai-optimizer schedule [--hour H] [--minute M]
-ai-optimizer schedule status
-ai-optimizer unschedule
-ai-optimizer version
+ai-env-optimizer setup [--workspace-root PATH] [--schedule]
+ai-env-optimizer doctor [--json] [--strict]
+ai-env-optimizer scan [--json] [--strict] [--workspace-root PATH]
+ai-env-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
+ai-env-optimizer report [--json]
+ai-env-optimizer schedule [--hour H] [--minute M]
+ai-env-optimizer schedule status
+ai-env-optimizer unschedule
+ai-env-optimizer version
 ```
 
 The default workspace root is `~/git` when it exists, otherwise the current
 directory.
+
+## Upgrading from `ai-optimizer`
+
+Version 0.2 renamed the project and canonical command to `ai-env-optimizer`.
+Homebrew migrates the old formula name automatically. The legacy
+`ai-optimizer` command remains an exact compatibility alias, and the direct
+installer recognizes existing v0.1 install roots, state manifests, environment
+variables, and schedules. New environment variables use the
+`AI_ENV_OPTIMIZER_*` prefix; existing `AI_OPTIMIZER_*` variables remain
+supported.
+
+The direct launchd label `io.github.nyldn.ai-optimizer.daily` and Homebrew
+service label `homebrew.mxcl.ai-optimizer` intentionally remain stable so an
+upgrade cannot create a duplicate background job.
 
 ## Use with Codex or Claude Code
 
@@ -74,7 +89,7 @@ automatically reads `AGENTS.md`; Claude Code loads `CLAUDE.md`, which imports
 the same operating contract. Both are directed to begin with:
 
 ```sh
-./bin/ai-optimizer agent-context --json
+./bin/ai-env-optimizer agent-context --json
 ```
 
 The handshake combines current doctor and workspace evidence with deduplicated
@@ -87,7 +102,7 @@ recommended prompt, and repair loop.
 Scheduling is opt-in:
 
 ```sh
-brew services start nyldn/tap/ai-optimizer
+brew services start nyldn/tap/ai-env-optimizer
 ```
 
 For Homebrew installs, this is the recommended path. Homebrew creates a
@@ -96,20 +111,20 @@ loaded, and resolves the stable `opt` path across package upgrades. Check or
 remove it with:
 
 ```sh
-brew services info nyldn/tap/ai-optimizer
-brew services stop nyldn/tap/ai-optimizer
+brew services info nyldn/tap/ai-env-optimizer
+brew services stop nyldn/tap/ai-env-optimizer
 ```
 
 Do not enable both schedulers. For a checksum-verified direct install, or when
-you need a custom time, use AI Optimizer's own scheduler:
+you need a custom time, use AI Environment Optimizer's own scheduler:
 
 ```sh
-ai-optimizer schedule
+ai-env-optimizer schedule
 ```
 
-The default is 21:00 local time. AI Optimizer accepts 19:00 through 02:00 and
-checks the time again when launchd actually starts the process. A Mac waking
-later in the morning records `skipped_outside_window` and performs no scan.
+The default is 21:00 local time. AI Environment Optimizer accepts 19:00 through
+02:00 and checks the time again when launchd actually starts the process. A Mac
+waking later in the morning records `skipped_outside_window` and performs no scan.
 Configuration, receipts, and scheduler logs are stored with owner-only
 permissions.
 The direct-install launch agent uses an owner-only, product-owned maintenance launcher under
@@ -118,7 +133,7 @@ executable path, and the Homebrew or direct-install path does not appear in the
 launchd plist. Package upgrades therefore leave an already opted-in schedule
 registered.
 
-AI Optimizer owns only:
+AI Environment Optimizer owns only:
 
 ```text
 ~/Library/LaunchAgents/io.github.nyldn.ai-optimizer.daily.plist
@@ -128,7 +143,7 @@ io.github.nyldn.ai-optimizer.daily
 Remove it with:
 
 ```sh
-ai-optimizer unschedule
+ai-env-optimizer unschedule
 ```
 
 ## Privacy and mutation boundary
@@ -140,11 +155,11 @@ contents.
 
 The only mutating commands are:
 
-- `setup`, which writes AI Optimizer configuration;
+- `setup`, which writes AI Environment Optimizer configuration;
 - `schedule`, which writes and bootstraps the exact launch agent above;
 - `unschedule`, which removes that exact launch agent.
 
-Graphify, Claude-Mem, and ATK are useful optional companions. AI Optimizer
+Graphify, Claude-Mem, and ATK are useful optional companions. AI Environment Optimizer
 detects them but does not install, configure, update, or remove them.
 
 See [Privacy](docs/privacy.md) and [Architecture](docs/architecture.md).
@@ -157,14 +172,14 @@ The direct path verifies the installer before it runs, then the installer
 verifies the release archive before changing live paths:
 
 ```sh
-VERSION=0.1.8
-curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh"
-curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh.sha256"
+VERSION=0.2.0
+curl -fLO "https://github.com/nyldn/ai-env-optimizer/releases/download/v$VERSION/install.sh"
+curl -fLO "https://github.com/nyldn/ai-env-optimizer/releases/download/v$VERSION/install.sh.sha256"
 shasum -a 256 -c install.sh.sha256
 bash install.sh --version "$VERSION"
 ```
 
-Direct installs use `~/.local/share/ai-optimizer` and link the command into
+Direct installs use `~/.local/share/ai-env-optimizer` and link the command into
 `~/.local/bin`. If that directory is not on PATH, the installer prints the
 exact zsh line to add.
 
@@ -173,22 +188,22 @@ exact zsh line to add.
 Homebrew:
 
 ```sh
-brew upgrade ai-optimizer
-brew services stop nyldn/tap/ai-optimizer
-brew uninstall ai-optimizer
+brew upgrade ai-env-optimizer
+brew services stop nyldn/tap/ai-env-optimizer
+brew uninstall ai-env-optimizer
 ```
 
-If you used `ai-optimizer schedule` instead, run `ai-optimizer unschedule`
+If you used `ai-env-optimizer schedule` instead, run `ai-env-optimizer unschedule`
 before uninstalling.
 
 Direct install:
 
 ```sh
-~/.local/share/ai-optimizer/scripts/uninstall.sh
+~/.local/share/ai-env-optimizer/scripts/uninstall.sh
 ```
 
-Add `--keep-state` to retain AI Optimizer configuration and reports.
-Uninstall removes only paths with AI Optimizer provenance.
+Add `--keep-state` to retain AI Environment Optimizer configuration and reports.
+Uninstall removes only paths with product provenance.
 
 ## Development
 

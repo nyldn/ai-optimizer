@@ -7,19 +7,19 @@ require "rbconfig"
 module AIOptimizer
   class CLI
     HELP = <<~HELP
-      AI Optimizer keeps a macOS Claude Code and Codex environment understandable.
+      AI Environment Optimizer keeps a macOS Claude Code and Codex environment understandable.
 
       Usage:
-        ai-optimizer setup [--workspace-root PATH] [--schedule]
-        ai-optimizer doctor [--json] [--strict]
-        ai-optimizer scan [--json] [--strict] [--workspace-root PATH]
-        ai-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
-        ai-optimizer report [--json]
-        ai-optimizer schedule [--hour H] [--minute M] [--force-outside-window]
-        ai-optimizer schedule status
-        ai-optimizer unschedule
-        ai-optimizer version
-        ai-optimizer help
+        ai-env-optimizer setup [--workspace-root PATH] [--schedule]
+        ai-env-optimizer doctor [--json] [--strict]
+        ai-env-optimizer scan [--json] [--strict] [--workspace-root PATH]
+        ai-env-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
+        ai-env-optimizer report [--json]
+        ai-env-optimizer schedule [--hour H] [--minute M] [--force-outside-window]
+        ai-env-optimizer schedule status
+        ai-env-optimizer unschedule
+        ai-env-optimizer version
+        ai-env-optimizer help
 
       doctor, scan, and agent-context are read-only. Scheduling is opt-in and owns only:
         #{Scheduler::LABEL}
@@ -32,7 +32,7 @@ module AIOptimizer
       stderr.puts(HELP)
       2
     rescue StandardError => error
-      stderr.puts("AI Optimizer could not complete: #{Redactor.scrub(error.message)}")
+      stderr.puts("AI Environment Optimizer could not complete: #{Redactor.scrub(error.message)}")
       3
     end
 
@@ -50,7 +50,7 @@ module AIOptimizer
         @stdout.write(HELP)
         0
       when "version", "--version"
-        @stdout.puts("ai-optimizer #{VERSION}")
+        @stdout.puts("ai-env-optimizer #{VERSION}")
         0
       when "doctor"
         run_diagnostic(args, Doctor)
@@ -107,7 +107,7 @@ module AIOptimizer
       raise UsageError, "workspace root must be an existing directory" unless Dir.exist?(workspace_root)
 
       values = config.defaults.merge("workspace_root" => workspace_root)
-      @stdout.puts("AI Optimizer will create:")
+      @stdout.puts("AI Environment Optimizer will create:")
       @stdout.puts("  #{display_path(config.path)}")
       @stdout.puts("Workspace root: #{display_path(workspace_root)}")
       config.save(values)
@@ -117,7 +117,7 @@ module AIOptimizer
         config.save(values)
         @stdout.puts("Evening doctor scheduled for 21:00 local time.")
       end
-      @stdout.puts("Ready. Run: ai-optimizer doctor")
+      @stdout.puts("Ready. Run: ai-env-optimizer doctor")
       0
     end
 
@@ -243,14 +243,15 @@ module AIOptimizer
 
     def data_dir
       @data_dir ||= File.expand_path(
-        @env["AI_OPTIMIZER_DATA_DIR"] || Config.default_data_dir
+        env_value("AI_ENV_OPTIMIZER_DATA_DIR", "AI_OPTIMIZER_DATA_DIR") || Config.default_data_dir
       )
     end
 
     def scheduler
       @scheduler ||= Scheduler.new(
         launch_agents_dir: File.expand_path(
-          @env["AI_OPTIMIZER_LAUNCH_AGENTS_DIR"] || File.join(Dir.home, "Library", "LaunchAgents")
+          env_value("AI_ENV_OPTIMIZER_LAUNCH_AGENTS_DIR", "AI_OPTIMIZER_LAUNCH_AGENTS_DIR") ||
+            File.join(Dir.home, "Library", "LaunchAgents")
         ),
         data_dir: data_dir,
         executable: executable_path,
@@ -271,6 +272,10 @@ module AIOptimizer
 
     def require_no_args(args)
       raise UsageError, "unexpected arguments: #{args.length}" unless args.empty?
+    end
+
+    def env_value(canonical, legacy)
+      @env[canonical] || @env[legacy]
     end
 
     def display_path(path)

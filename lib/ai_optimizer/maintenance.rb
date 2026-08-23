@@ -53,7 +53,7 @@ module AIOptimizer
     def base_receipt(time)
       {
         "schema_version" => 1,
-        "product" => "ai-optimizer",
+        "product" => "ai-env-optimizer",
         "generated_at" => time.utc.iso8601
       }
     end

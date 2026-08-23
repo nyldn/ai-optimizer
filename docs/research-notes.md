@@ -4,7 +4,7 @@ Observed on 2026-08-22. Recommendations used sources freshly served or changed
 since 2026-05-22. These are independently implemented design patterns; no
 project code was copied.
 
-| Pattern | Recent evidence | AI Optimizer decision |
+| Pattern | Recent evidence | AI Environment Optimizer decision |
 |---|---|---|
 | Structured findings and JSON | [Homebrew Finding objects, 2026-07-24](https://github.com/Homebrew/brew/commit/a05f49aa85a885a9c524616085a5ee1abdd87803) | One stable finding model renders human and JSON output. |
 | Text/JSON parity | [mise doctor fix and test, 2026-08-22](https://github.com/jdx/mise/commit/6f52dcdf99e282ef7a7db68c81301fa4618d0f79) | Regression tests ensure warnings appear in both formats. |
@@ -18,6 +18,6 @@ project code was copied.
 | Native service lifecycle | [Homebrew service DSL public API, 2026-07-26](https://github.com/Homebrew/brew/commit/29cb5e338a49290d813aa063312b7b79c5d10732) and [Formula Cookbook](https://docs.brew.sh/Formula-Cookbook#service-files) | Homebrew installs use `brew services` with a stable `opt` command and an explicit 19:30 cron expression; no user crontab is created. |
 | Precise linked-skill failures | [fx linked-skill diagnostic, 2026-08-22](https://github.com/vercel-labs/fx/commit/c6d210b1fe47808e1a3553b17a022bfb82831a89) | Broken linked skill directories warn separately from invalid frontmatter, without leaking paths. |
 
-The resulting product boundary is intentional: AI Optimizer is a macOS
+The resulting product boundary is intentional: AI Environment Optimizer is a macOS
 observer and owner of its own maintenance state. It is not another package
 manager, provider proxy, memory system, or autonomous workspace repair agent.

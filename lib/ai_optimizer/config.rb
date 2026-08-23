@@ -6,12 +6,21 @@ require "securerandom"
 
 module AIOptimizer
   class Config
-    APPLICATION_SUPPORT_NAME = "io.github.nyldn.ai-optimizer"
+    PRODUCT_ID = "ai-env-optimizer"
+    LEGACY_PRODUCT_IDS = ["ai-optimizer"].freeze
+    APPLICATION_SUPPORT_NAME = "io.github.nyldn.ai-env-optimizer"
+    LEGACY_APPLICATION_SUPPORT_NAMES = ["io.github.nyldn.ai-optimizer"].freeze
 
     attr_reader :data_dir, :path, :manifest_path, :default_workspace_root
 
     def self.default_data_dir(home = Dir.home)
-      File.join(home, "Library", "Application Support", APPLICATION_SUPPORT_NAME)
+      support = File.join(home, "Library", "Application Support")
+      canonical = File.join(support, APPLICATION_SUPPORT_NAME)
+      return canonical if File.exist?(canonical)
+
+      legacy = LEGACY_APPLICATION_SUPPORT_NAMES.map { |name| File.join(support, name) }
+                                                .find { |path| File.exist?(path) }
+      legacy || canonical
     end
 
     def initialize(data_dir: nil, default_workspace_root: nil)
@@ -88,7 +97,7 @@ module AIOptimizer
       raise OwnershipError, "data directory must not be a symlink" if File.symlink?(data_dir)
 
       if File.exist?(data_dir) && !File.directory?(data_dir)
-        raise OwnershipError, "AI Optimizer data path is not a directory"
+        raise OwnershipError, "AI Environment Optimizer data path is not a directory"
       end
       FileUtils.mkdir_p(data_dir, mode: 0o700)
       File.chmod(0o700, data_dir)
@@ -102,7 +111,7 @@ module AIOptimizer
     def assert_contained_target(target)
       expanded = File.expand_path(target)
       prefix = data_dir.end_with?(File::SEPARATOR) ? data_dir : data_dir + File::SEPARATOR
-      raise OwnershipError, "write target is outside AI Optimizer data" unless expanded.start_with?(prefix)
+      raise OwnershipError, "write target is outside AI Environment Optimizer data" unless expanded.start_with?(prefix)
       raise OwnershipError, "refusing to replace a symlink" if File.symlink?(expanded)
     end
 
@@ -111,13 +120,14 @@ module AIOptimizer
       return if Dir.children(data_dir).empty?
       return if owned_manifest?
 
-      raise OwnershipError, "AI Optimizer data directory is not product-owned"
+      raise OwnershipError, "AI Environment Optimizer data directory is not product-owned"
     end
 
     def owned_manifest?
       return false unless File.file?(manifest_path) && !File.symlink?(manifest_path)
 
-      JSON.parse(File.binread(manifest_path)).fetch("owner", nil) == "ai-optimizer"
+      owner = JSON.parse(File.binread(manifest_path)).fetch("owner", nil)
+      ([PRODUCT_ID] + LEGACY_PRODUCT_IDS).include?(owner)
     rescue JSON::ParserError
       false
     end
@@ -125,7 +135,7 @@ module AIOptimizer
     def write_manifest
       manifest = {
         "schema_version" => 1,
-        "owner" => "ai-optimizer",
+        "owner" => PRODUCT_ID,
         "version" => VERSION,
         "files" => [File.basename(path), File.basename(manifest_path)]
       }

@@ -31,14 +31,14 @@ jobs:
       - name: Attest release archive
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: dist/ai-optimizer-*.tar.gz
+          subject-path: dist/ai-env-optimizer-*.tar.gz
       - name: Retain release assets in the workflow
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ai-optimizer-release
+          name: ai-env-optimizer-release
           path: |
-            dist/ai-optimizer-*.tar.gz
-            dist/ai-optimizer-*.tar.gz.sha256
+            dist/ai-env-optimizer-*.tar.gz
+            dist/ai-env-optimizer-*.tar.gz.sha256
             dist/install.sh
             dist/install.sh.sha256
           if-no-files-found: error
@@ -46,4 +46,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/ai-optimizer-*.tar.gz dist/ai-optimizer-*.tar.gz.sha256 dist/install.sh dist/install.sh.sha256 --verify-tag --generate-notes --title "AI Optimizer $GITHUB_REF_NAME"
+          gh release create "$GITHUB_REF_NAME" dist/ai-env-optimizer-*.tar.gz dist/ai-env-optimizer-*.tar.gz.sha256 dist/install.sh dist/install.sh.sha256 --verify-tag --generate-notes --title "AI Environment Optimizer $GITHUB_REF_NAME"

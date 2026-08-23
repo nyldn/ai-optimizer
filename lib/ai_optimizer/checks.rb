@@ -56,8 +56,8 @@ module AIOptimizer
         id: "system.macos", category: "system", status: status,
         message: message,
         detail: "macOS #{@context.macos_version}, #{@context.architecture}",
-        remediation: status == "fail" ? "Run AI Optimizer on macOS 13 or later." : nil,
-        required: true, affects: ["ai-optimizer"]
+        remediation: status == "fail" ? "Run AI Environment Optimizer on macOS 13 or later." : nil,
+        required: true, affects: ["ai-env-optimizer"]
       )]
     end
 
@@ -308,7 +308,7 @@ module AIOptimizer
           id: "skills.linked_candidates", category: "skills", status: "warn",
           message: "Some linked skill directories are unavailable",
           detail: "#{unavailable_links} linked skill #{noun} could not be used; paths were omitted.",
-          remediation: "Repair or remove broken skill links, then rerun ai-optimizer doctor.",
+          remediation: "Repair or remove broken skill links, then rerun ai-env-optimizer doctor.",
           required: false, affects: ["claude", "codex"]
         )
       end
@@ -354,23 +354,23 @@ module AIOptimizer
         config.load
         [Finding.new(
           id: "product.config", category: "product", status: "pass",
-          message: "AI Optimizer configuration is valid", required: true,
-          affects: ["ai-optimizer"]
+          message: "AI Environment Optimizer configuration is valid", required: true,
+          affects: ["ai-env-optimizer"]
         )]
       else
         [Finding.new(
           id: "product.config", category: "product", status: "info",
-          message: "AI Optimizer has not been set up yet",
-          remediation: "Run ai-optimizer setup when you want to save defaults.",
-          required: false, affects: ["ai-optimizer"]
+          message: "AI Environment Optimizer has not been set up yet",
+          remediation: "Run ai-env-optimizer setup when you want to save defaults.",
+          required: false, affects: ["ai-env-optimizer"]
         )]
       end
     rescue ConfigError, OwnershipError
       [Finding.new(
         id: "product.config", category: "product", status: "fail",
-        message: "AI Optimizer configuration is invalid",
-        remediation: "Move the invalid file aside, then run ai-optimizer setup.",
-        required: true, affects: ["ai-optimizer"]
+        message: "AI Environment Optimizer configuration is invalid",
+        remediation: "Move the invalid file aside, then run ai-env-optimizer setup.",
+        required: true, affects: ["ai-env-optimizer"]
       )]
     end
 

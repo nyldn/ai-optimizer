@@ -1,7 +1,18 @@
 # Changelog
 
-All notable changes are documented here. AI Optimizer follows semantic
+All notable changes are documented here. AI Environment Optimizer follows semantic
 versioning.
+
+## 0.2.0 - 2026-08-23
+
+- Rename the public project, repository, formula, release archive, and primary
+  command to AI Environment Optimizer and `ai-env-optimizer`.
+- Preserve `ai-optimizer` as a working command alias and accept existing v0.1
+  state, install markers, environment variables, and direct-install roots.
+- Keep both existing launchd service labels stable to prevent duplicate jobs,
+  while new installs use the canonical state directory and environment prefix.
+- Add a Homebrew same-tap formula migration so installed users upgrade without
+  uninstalling or losing their opted-in service.
 
 ## 0.1.8 - 2026-08-23
 

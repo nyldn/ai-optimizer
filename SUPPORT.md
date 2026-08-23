@@ -1,14 +1,14 @@
 # Support
 
-Use [GitHub Discussions](https://github.com/nyldn/ai-optimizer/discussions) for
+Use [GitHub Discussions](https://github.com/nyldn/ai-env-optimizer/discussions) for
 setup questions and ideas. Use
-[GitHub Issues](https://github.com/nyldn/ai-optimizer/issues) for reproducible
+[GitHub Issues](https://github.com/nyldn/ai-env-optimizer/issues) for reproducible
 bugs.
 
 Before reporting a bug, run:
 
 ```sh
-ai-optimizer doctor --json
+ai-env-optimizer doctor --json
 ```
 
 Share only the finding IDs, statuses, and product version needed to reproduce

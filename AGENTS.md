@@ -1,15 +1,16 @@
-# AI Optimizer agent instructions
+# AI Environment Optimizer agent instructions
 
-AI Optimizer is a public, macOS-only diagnostic and narrowly owned maintenance
-CLI for Claude Code, Codex, MCP, skills, and coding workspaces. Codex reads this
-file automatically. Claude Code receives the same contract through `CLAUDE.md`.
+AI Environment Optimizer is a public, macOS-only diagnostic and narrowly owned
+maintenance CLI for Claude Code, Codex, MCP, skills, and coding workspaces.
+Codex reads this file automatically. Claude Code receives the same contract
+through `CLAUDE.md`.
 
 ## Choose the workflow
 
 - Use the **Operator workflow** when the user asks to inspect, configure,
   optimize, maintain, or repair their AI coding environment.
-- Use the **Development workflow** when the user asks to change AI Optimizer
-  itself.
+- Use the **Development workflow** when the user asks to change AI Environment
+  Optimizer itself.
 - If both apply, gather operator evidence first, then develop against a failing
   test without mixing host-specific data into the repository.
 
@@ -18,7 +19,7 @@ file automatically. Claude Code receives the same contract through `CLAUDE.md`.
 1. From this repository root, run the read-only handshake:
 
    ```sh
-   ./bin/ai-optimizer agent-context --json
+   ./bin/ai-env-optimizer agent-context --json
    ```
 
    Add `--workspace-root PATH` only when the user identifies a different
@@ -43,14 +44,14 @@ file automatically. Claude Code receives the same contract through `CLAUDE.md`.
 
 4. Never print or commit credentials, environment values, MCP endpoints,
    command arguments from user sessions, workspace names, or workspace file
-   contents. AI Optimizer reports are deliberately redacted; do not weaken that
+   contents. AI Environment Optimizer reports are deliberately redacted; do not weaken that
    boundary while investigating.
 
 5. Verify repairs with the affected tool's native doctor or focused test, then
    re-run:
 
    ```sh
-   ./bin/ai-optimizer agent-context --json
+   ./bin/ai-env-optimizer agent-context --json
    ```
 
    Report exact evidence, remaining findings, changed paths, and rollback
@@ -63,9 +64,10 @@ file automatically. Claude Code receives the same contract through `CLAUDE.md`.
 2. Preserve these invariants:
 
    - `doctor`, `scan`, and `agent-context` are read-only.
-   - Mutating commands may write only AI Optimizer-owned configuration,
+   - Mutating commands may write only AI Environment Optimizer-owned configuration,
      reports, release installation paths, and launchd label
      `io.github.nyldn.ai-optimizer.daily`.
+     This legacy internal label is intentionally stable across the v0.2 rename.
    - Never silently edit or upgrade Claude Code, Codex, MCP servers, skills,
      companion tools, or repositories.
    - Keep runtime code compatible with `/usr/bin/ruby` 2.6 and the standard

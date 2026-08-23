@@ -1,5 +1,5 @@
 name: Bug report
-description: Report reproducible AI Optimizer behavior
+description: Report reproducible AI Environment Optimizer behavior
 title: "bug: "
 labels:
   - bug
@@ -10,7 +10,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: AI Optimizer version
+      label: AI Environment Optimizer version
       placeholder: 0.1.0
     validations:
       required: true
