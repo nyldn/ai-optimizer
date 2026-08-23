@@ -20,6 +20,10 @@ module AIOptimizer
   end
 
   class CommandRunner
+    def initialize(home: Dir.home)
+      @home = File.expand_path(home)
+    end
+
     def run(argv, timeout: 10, env: {})
       raise ArgumentError, "command must be a non-empty argument array" unless argv.is_a?(Array) && !argv.empty?
 
@@ -48,8 +52,8 @@ module AIOptimizer
       CommandResult.new(
         File.basename(argv.first.to_s),
         status,
-        Redactor.scrub(stdout_text),
-        Redactor.scrub(stderr_text),
+        Redactor.scrub(stdout_text, home: @home),
+        Redactor.scrub(stderr_text, home: @home),
         timed_out,
         (monotonic_time - started).round(3)
       )
@@ -58,7 +62,7 @@ module AIOptimizer
         File.basename(argv.first.to_s),
         127,
         "",
-        Redactor.scrub(error.message),
+        Redactor.scrub(error.message, home: @home),
         false,
         (monotonic_time - started).round(3)
       )

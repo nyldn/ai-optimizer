@@ -316,7 +316,7 @@ module AIOptimizer
     end
 
     def build_context(workspace_override)
-      runner = CommandRunner.new
+      runner = CommandRunner.new(home: home_dir)
       values = begin
         config.load
       rescue ConfigError, OwnershipError
