@@ -33,7 +33,7 @@ skills, repositories, or launchd unless you explicitly add `--schedule`.
 Example:
 
 ```text
-AI Optimizer 0.1.6
+AI Optimizer 0.1.7
 
 [PASS] system.macos - macOS is supported
 [PASS] tools.claude.present - Claude Code is available
@@ -68,6 +68,23 @@ directory.
 Scheduling is opt-in:
 
 ```sh
+brew services start nyldn/tap/ai-optimizer
+```
+
+For Homebrew installs, this is the recommended path. Homebrew creates a
+user-level launchd job that runs at 19:30 local time, does not run when first
+loaded, and resolves the stable `opt` path across package upgrades. Check or
+remove it with:
+
+```sh
+brew services info nyldn/tap/ai-optimizer
+brew services stop nyldn/tap/ai-optimizer
+```
+
+Do not enable both schedulers. For a checksum-verified direct install, or when
+you need a custom time, use AI Optimizer's own scheduler:
+
+```sh
 ai-optimizer schedule
 ```
 
@@ -76,7 +93,7 @@ checks the time again when launchd actually starts the process. A Mac waking
 later in the morning records `skipped_outside_window` and performs no scan.
 Configuration, receipts, and scheduler logs are stored with owner-only
 permissions.
-The launch agent uses an owner-only, product-owned maintenance launcher under
+The direct-install launch agent uses an owner-only, product-owned maintenance launcher under
 Application Support. Its versioned filename is stable for the configured
 executable path, and the Homebrew or direct-install path does not appear in the
 launchd plist. Package upgrades therefore leave an already opted-in schedule
@@ -121,7 +138,7 @@ The direct path verifies the installer before it runs, then the installer
 verifies the release archive before changing live paths:
 
 ```sh
-VERSION=0.1.6
+VERSION=0.1.7
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh"
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh.sha256"
 shasum -a 256 -c install.sh.sha256
@@ -138,9 +155,12 @@ Homebrew:
 
 ```sh
 brew upgrade ai-optimizer
-ai-optimizer unschedule
+brew services stop nyldn/tap/ai-optimizer
 brew uninstall ai-optimizer
 ```
+
+If you used `ai-optimizer schedule` instead, run `ai-optimizer unschedule`
+before uninstalling.
 
 Direct install:
 

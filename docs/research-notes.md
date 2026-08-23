@@ -15,6 +15,8 @@ project code was copied.
 | Visible background failure | [gstack crash sentinel, 2026-08-15](https://github.com/garrytan/gstack/commit/008dd65b1fc3df8af618408f5aea37a24dcea411) | Silence cannot mean success; every scheduled run has a receipt. |
 | Validate before replace | [cc-switch backup source, current head 2026-08-22](https://github.com/farion1231/cc-switch/blob/5ca9459d50ea4beea6a81bbc509de6ec5b6b09ca/src-tauri/src/database/backup.rs) | Stage and validate before changing last known-good state. |
 | One recommended install path | [Matt Pocock skills, current head 2026-08-22](https://github.com/mattpocock/skills/blob/5b15a47f2d7150f545fbcacbfe381787fc0230dc/README.md) | Homebrew is primary; direct install is a clearly labeled fallback. |
+| Native service lifecycle | [Homebrew service DSL public API, 2026-07-26](https://github.com/Homebrew/brew/commit/29cb5e338a49290d813aa063312b7b79c5d10732) and [Formula Cookbook](https://docs.brew.sh/Formula-Cookbook#service-files) | Homebrew installs use `brew services` with a stable `opt` command and an explicit 19:30 cron expression; no user crontab is created. |
+| Precise linked-skill failures | [fx linked-skill diagnostic, 2026-08-22](https://github.com/vercel-labs/fx/commit/c6d210b1fe47808e1a3553b17a022bfb82831a89) | Broken linked skill directories warn separately from invalid frontmatter, without leaking paths. |
 
 The resulting product boundary is intentional: AI Optimizer is a macOS
 observer and owner of its own maintenance state. It is not another package

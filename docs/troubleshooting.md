@@ -23,6 +23,15 @@ fail CI.
 
 ## The launch agent is not loaded
 
+For a Homebrew install:
+
+```sh
+brew services info nyldn/tap/ai-optimizer
+brew services restart nyldn/tap/ai-optimizer
+```
+
+For a direct install or custom schedule:
+
 ```sh
 ai-optimizer schedule status
 ai-optimizer unschedule
@@ -31,6 +40,9 @@ ai-optimizer schedule
 
 The scheduler is idempotent and reconciles file and launchd state. It owns only
 `io.github.nyldn.ai-optimizer.daily`.
+
+Do not run both scheduling modes. Stop the Homebrew service before enabling a
+custom AI Optimizer schedule.
 
 ## A morning run says skipped
 
