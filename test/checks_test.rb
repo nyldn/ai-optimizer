@@ -43,6 +43,95 @@ class ChecksTest < Minitest::Test
     end
   end
 
+  def test_broken_linked_skill_directory_is_reported_without_its_path
+    in_tmpdir do |dir|
+      skills_root = File.join(dir, ".codex", "skills")
+      FileUtils.mkdir_p(skills_root)
+      private_name = "confidential-missing-skill"
+      File.symlink(File.join(dir, private_name), File.join(skills_root, private_name))
+      context = AIOptimizer::CheckContext.new(
+        home: dir, data_dir: File.join(dir, "data"), workspace_root: dir,
+        path: "", runner: TestSupport::FakeCommandRunner.new,
+        platform: "darwin", architecture: "arm64", macos_version: "15.6"
+      )
+
+      report = AIOptimizer::Doctor.new(context).run
+      finding = report.findings.find { |item| item.id == "skills.linked_candidates" }
+
+      assert_equal "warn", finding.status
+      assert_includes finding.detail, "1 linked skill directory"
+      refute_includes report.to_json, private_name
+    end
+  end
+
+  def test_linked_skill_with_non_directory_path_component_does_not_hide_inventory
+    in_tmpdir do |dir|
+      skills_root = File.join(dir, ".codex", "skills")
+      FileUtils.mkdir_p(File.join(skills_root, "valid"))
+      File.write(File.join(skills_root, "valid", "SKILL.md"), "---\nname: valid\ndescription: Valid fixture\n---\n")
+      plain_file = File.join(dir, "plain-file")
+      File.write(plain_file, "not a directory")
+      File.symlink(File.join(plain_file, "child"), File.join(skills_root, "unavailable"))
+      context = AIOptimizer::CheckContext.new(
+        home: dir, data_dir: File.join(dir, "data"), workspace_root: dir,
+        path: "", runner: TestSupport::FakeCommandRunner.new,
+        platform: "darwin", architecture: "arm64", macos_version: "15.6"
+      )
+
+      report = AIOptimizer::Doctor.new(context).run
+      inventory = report.findings.find { |item| item.id == "skills.inventory" }
+      linked = report.findings.find { |item| item.id == "skills.linked_candidates" }
+
+      assert_includes inventory.detail, "1 skills"
+      assert_equal "warn", linked.status
+      refute report.findings.any? { |item| item.id == "checks.skills_check.unknown" }
+    end
+  end
+
+  def test_linked_regular_file_is_not_counted_as_a_skill_directory
+    in_tmpdir do |dir|
+      skills_root = File.join(dir, ".codex", "skills")
+      FileUtils.mkdir_p(skills_root)
+      regular_file = File.join(dir, "not-a-skill-directory")
+      File.write(regular_file, "fixture")
+      File.symlink(regular_file, File.join(skills_root, "linked-file"))
+      context = AIOptimizer::CheckContext.new(
+        home: dir, data_dir: File.join(dir, "data"), workspace_root: dir,
+        path: "", runner: TestSupport::FakeCommandRunner.new,
+        platform: "darwin", architecture: "arm64", macos_version: "15.6"
+      )
+
+      finding = AIOptimizer::Doctor.new(context).run.findings.find do |item|
+        item.id == "skills.linked_candidates"
+      end
+
+      assert_equal "warn", finding.status
+      assert_includes finding.detail, "could not be used"
+    end
+  end
+
+  def test_available_linked_skill_directory_remains_a_valid_skill
+    in_tmpdir do |dir|
+      source = File.join(dir, "shared", "valid-skill")
+      skills_root = File.join(dir, ".codex", "skills")
+      FileUtils.mkdir_p(source)
+      FileUtils.mkdir_p(skills_root)
+      File.write(File.join(source, "SKILL.md"), "---\nname: valid-skill\ndescription: Valid fixture\n---\n")
+      File.symlink(source, File.join(skills_root, "valid-skill"))
+      context = AIOptimizer::CheckContext.new(
+        home: dir, data_dir: File.join(dir, "data"), workspace_root: dir,
+        path: "", runner: TestSupport::FakeCommandRunner.new,
+        platform: "darwin", architecture: "arm64", macos_version: "15.6"
+      )
+
+      report = AIOptimizer::Doctor.new(context).run
+      inventory = report.findings.find { |item| item.id == "skills.inventory" }
+
+      assert_includes inventory.detail, "1 skills"
+      refute report.findings.any? { |item| item.id == "skills.linked_candidates" }
+    end
+  end
+
   def test_workspace_scan_reports_counts_not_names
     in_tmpdir do |dir|
       root = File.join(dir, "workspaces")

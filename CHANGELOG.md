@@ -3,6 +3,13 @@
 All notable changes are documented here. AI Optimizer follows semantic
 versioning.
 
+## 0.1.7 - 2026-08-23
+
+- Warn (and therefore fail `--strict`) when a linked skill directory cannot be
+  used, while keeping its path out of both human and JSON reports.
+- Document Homebrew's native, opt-in 19:30 service as the recommended scheduled
+  maintenance path for Homebrew installations.
+
 ## 0.1.6 - 2026-08-22
 
 - Keep the configured AI Optimizer executable out of the launchd plist

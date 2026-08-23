@@ -268,11 +268,18 @@ module AIOptimizer
       ]
       names = []
       invalid = 0
+      unavailable_links = 0
       roots.each do |root|
         next unless Dir.exist?(root)
 
         Dir.children(root).sort.each do |name|
-          skill_file = File.join(root, name, "SKILL.md")
+          candidate = File.join(root, name)
+          if unavailable_link?(candidate)
+            unavailable_links += 1
+            next
+          end
+
+          skill_file = File.join(candidate, "SKILL.md")
           next unless File.file?(skill_file)
 
           names << name
@@ -287,14 +294,25 @@ module AIOptimizer
                else
                  "pass"
                end
-      Finding.new(
+      findings = [Finding.new(
         id: "skills.inventory", category: "skills", status: status,
         message: "Skill inventory inspected",
         detail: "#{names.length} skills, #{duplicates} names shared across tool roots, " \
           "#{invalid} invalid frontmatter files",
         remediation: invalid.positive? ? "Fix invalid SKILL.md frontmatter before using those skills." : nil,
         required: false, affects: ["claude", "codex"]
-      ).yield_self { |finding| [finding] }
+      )]
+      if unavailable_links.positive?
+        noun = unavailable_links == 1 ? "directory" : "directories"
+        findings << Finding.new(
+          id: "skills.linked_candidates", category: "skills", status: "warn",
+          message: "Some linked skill directories are unavailable",
+          detail: "#{unavailable_links} linked skill #{noun} could not be used; paths were omitted.",
+          remediation: "Repair or remove broken skill links, then rerun ai-optimizer doctor.",
+          required: false, affects: ["claude", "codex"]
+        )
+      end
+      findings
     end
 
     def required?
@@ -302,6 +320,14 @@ module AIOptimizer
     end
 
     private
+
+    def unavailable_link?(path)
+      return false unless File.symlink?(path)
+
+      !File.directory?(File.realpath(path))
+    rescue SystemCallError
+      true
+    end
 
     def valid_frontmatter?(path)
       content = File.binread(path, 16_384)
