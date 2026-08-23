@@ -303,7 +303,9 @@ module AIOptimizer
     def run_maintenance
       maintenance = Maintenance.new(
         data_dir: data_dir,
-        doctor: -> { Scanner.new(build_context(nil)).run }
+        doctor: -> { Scanner.new(build_context(nil)).run },
+        storage: -> { build_storage_report },
+        warning_bytes: config.storage_warning_bytes
       )
       receipt = maintenance.run
       @stdout.puts(JSON.generate(receipt))
@@ -339,7 +341,7 @@ module AIOptimizer
         home: home_dir,
         data_dir: data_dir
       ).scan
-      StorageReport.new(measurements)
+      StorageReport.new(measurements, warning_bytes: config.storage_warning_bytes)
     end
 
     def build_storage_catalog

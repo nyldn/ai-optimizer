@@ -8,10 +8,17 @@ module AIOptimizer
   class Maintenance
     attr_reader :data_dir
 
-    def initialize(data_dir:, clock: -> { Time.now }, doctor: nil)
+    def initialize(data_dir:, clock: -> { Time.now }, doctor: nil, storage: nil,
+                   warning_bytes: Config::DEFAULT_STORAGE_WARNING_BYTES)
       @data_dir = File.expand_path(data_dir)
       @clock = clock
       @doctor = doctor
+      @storage = storage
+      @warning_bytes = if warning_bytes.is_a?(Integer) && warning_bytes.positive?
+                         warning_bytes
+                       else
+                         Config::DEFAULT_STORAGE_WARNING_BYTES
+                       end
     end
 
     def run
@@ -43,11 +50,12 @@ module AIOptimizer
     def run_doctor(time)
       report = @doctor.call
       code = report.exit_code
-      base_receipt(time).merge(
+      receipt = base_receipt(time).merge(
         "status" => code.zero? ? "passed" : "failed",
         "exit_code" => code,
         "summary" => report.summary
       )
+      @storage ? receipt.merge("storage" => storage_summary) : receipt
     end
 
     def base_receipt(time)
@@ -57,6 +65,25 @@ module AIOptimizer
         "compatibility" => { "legacy_names" => ["ai-optimizer"] },
         "generated_at" => time.utc.iso8601
       }
+    end
+
+    def storage_summary
+      summary = @storage.call.summary
+      allocated = nonnegative_integer(summary, "allocated_bytes")
+      {
+        "status" => allocated >= @warning_bytes ? "warning" : "healthy",
+        "allocated_bytes" => allocated,
+        "protected_bytes" => nonnegative_integer(summary, "protected_bytes"),
+        "reclaimable_bytes" => nonnegative_integer(summary, "reclaimable_bytes"),
+        "unknown_sources" => nonnegative_integer(summary, "unknown_sources")
+      }
+    end
+
+    def nonnegative_integer(summary, key)
+      value = summary.fetch(key)
+      raise InternalError, "invalid storage summary" unless value.is_a?(Integer) && value >= 0
+
+      value
     end
 
     def write_receipt(receipt)

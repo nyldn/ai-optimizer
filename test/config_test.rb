@@ -3,6 +3,26 @@
 require_relative "test_helper"
 
 class ConfigTest < Minitest::Test
+  def test_defaults_include_report_only_storage_warning_threshold
+    in_tmpdir do |dir|
+      config = AIOptimizer::Config.new(data_dir: File.join(dir, "data"), default_workspace_root: dir)
+
+      assert_equal 10 * 1024 * 1024 * 1024,
+                   config.defaults.fetch("storage").fetch("warning_bytes")
+    end
+  end
+
+  def test_invalid_storage_warning_threshold_falls_back_to_default
+    in_tmpdir do |dir|
+      config = AIOptimizer::Config.new(data_dir: File.join(dir, "data"), default_workspace_root: dir)
+
+      assert_equal 10 * 1024 * 1024 * 1024,
+                   config.storage_warning_bytes("storage" => { "warning_bytes" => -1 })
+      assert_equal 10 * 1024 * 1024 * 1024,
+                   config.storage_warning_bytes("storage" => { "warning_bytes" => "large" })
+    end
+  end
+
   def test_default_data_dir_prefers_canonical_path_for_new_users
     in_tmpdir do |home|
       expected = File.join(home, "Library", "Application Support", "io.github.nyldn.ai-env-optimizer")

@@ -10,6 +10,7 @@ module AIOptimizer
     LEGACY_PRODUCT_IDS = ["ai-optimizer"].freeze
     APPLICATION_SUPPORT_NAME = "io.github.nyldn.ai-env-optimizer"
     LEGACY_APPLICATION_SUPPORT_NAMES = ["io.github.nyldn.ai-optimizer"].freeze
+    DEFAULT_STORAGE_WARNING_BYTES = 10 * 1024 * 1024 * 1024
 
     attr_reader :data_dir, :path, :manifest_path, :default_workspace_root
 
@@ -35,8 +36,18 @@ module AIOptimizer
         "schema_version" => 1,
         "workspace_root" => default_workspace_root,
         "schedule" => { "enabled" => false, "hour" => 21, "minute" => 0 },
+        "storage" => { "warning_bytes" => DEFAULT_STORAGE_WARNING_BYTES },
         "telemetry" => false
       }
+    end
+
+    def storage_warning_bytes(values = nil)
+      loaded = values || load
+      storage = loaded["storage"]
+      candidate = storage.is_a?(Hash) ? storage["warning_bytes"] : nil
+      candidate.is_a?(Integer) && candidate.positive? ? candidate : DEFAULT_STORAGE_WARNING_BYTES
+    rescue ConfigError, OwnershipError
+      DEFAULT_STORAGE_WARNING_BYTES
     end
 
     def load
