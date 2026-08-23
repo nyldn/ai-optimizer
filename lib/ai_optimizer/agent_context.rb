@@ -29,7 +29,8 @@ module AIOptimizer
     def to_h
       {
         schema_version: 1,
-        product: "ai-optimizer",
+        product: "ai-env-optimizer",
+        compatibility: { legacy_names: ["ai-optimizer"] },
         version: version,
         generated_at: generated_at.iso8601,
         mode: "read_only_advisor",
@@ -59,7 +60,7 @@ module AIOptimizer
 
     def to_text
       lines = [
-        "AI Optimizer agent context #{version}",
+        "AI Environment Optimizer agent context #{version}",
         "Mode: read-only advisor",
         "Overall: #{overall_status}",
         "",

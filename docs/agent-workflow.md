@@ -1,17 +1,17 @@
 # Working with Codex and Claude Code
 
-AI Optimizer gives coding agents a deterministic, read-only starting point.
+AI Environment Optimizer gives coding agents a deterministic, read-only starting point.
 The repository's `AGENTS.md` and `CLAUDE.md` route both Codex and Claude Code to
 the same command:
 
 ```sh
-./bin/ai-optimizer agent-context --json
+./bin/ai-env-optimizer agent-context --json
 ```
 
 Use the installed command instead when you are not working from a checkout:
 
 ```sh
-ai-optimizer agent-context --json
+ai-env-optimizer agent-context --json
 ```
 
 ## What the handshake returns
@@ -74,3 +74,19 @@ A useful first request is:
 
 Codex automatically discovers `AGENTS.md`; Claude Code loads `CLAUDE.md`, which
 imports the same contract.
+
+## Storage requests
+
+Make storage inventory the first command only when the user asks about storage
+or the latest evening receipt reports a warning:
+
+```sh
+./bin/ai-env-optimizer storage --json
+```
+
+The output is read-only and excludes paths and filenames. Historical sessions,
+transcripts, Claude-Mem knowledge, worktrees, and active plugin state are
+protected. If the user wants cache reclamation, produce a dry-run first and
+show its aggregate counts and token. Do not apply that token until the user has
+explicitly approved the same `--older-than` and `--min-size` filters. Scheduled
+maintenance never supplies that approval and never runs cleanup.

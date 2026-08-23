@@ -106,7 +106,7 @@ module AIOptimizer
                       content.include?("/ai-optimizer-maintenance</string>") ||
                       content.match?(versioned_wrapper)
       owned = content.include?("<string>#{LABEL}</string>") && command_owned
-      raise OwnershipError, "existing launch agent is not provably owned by AI Optimizer" unless owned
+      raise OwnershipError, "existing launch agent is not provably owned by AI Environment Optimizer" unless owned
     end
 
     def restore_previous_plist(previous_content, temporary)
@@ -164,7 +164,7 @@ module AIOptimizer
       if File.exist?(maintenance_wrapper_path)
         existing = File.file?(maintenance_wrapper_path) && File.binread(maintenance_wrapper_path)
         expected = maintenance_wrapper_content.dup.force_encoding(Encoding::BINARY)
-        raise OwnershipError, "existing maintenance launcher does not match AI Optimizer" unless existing == expected
+        raise OwnershipError, "existing maintenance launcher does not match AI Environment Optimizer" unless existing == expected
 
         File.chmod(0o700, maintenance_wrapper_path)
         return
@@ -220,7 +220,7 @@ module AIOptimizer
           <dict>
             <key>PATH</key>
             <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-            <key>AI_OPTIMIZER_DATA_DIR</key>
+            <key>AI_ENV_OPTIMIZER_DATA_DIR</key>
             <string>#{escape(data_dir)}</string>
           </dict>
           <key>StandardOutPath</key>

@@ -7,19 +7,22 @@ require "rbconfig"
 module AIOptimizer
   class CLI
     HELP = <<~HELP
-      AI Optimizer keeps a macOS Claude Code and Codex environment understandable.
+      AI Environment Optimizer keeps a macOS Claude Code and Codex environment understandable.
 
       Usage:
-        ai-optimizer setup [--workspace-root PATH] [--schedule]
-        ai-optimizer doctor [--json] [--strict]
-        ai-optimizer scan [--json] [--strict] [--workspace-root PATH]
-        ai-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
-        ai-optimizer report [--json]
-        ai-optimizer schedule [--hour H] [--minute M] [--force-outside-window]
-        ai-optimizer schedule status
-        ai-optimizer unschedule
-        ai-optimizer version
-        ai-optimizer help
+        ai-env-optimizer setup [--workspace-root PATH] [--schedule]
+        ai-env-optimizer doctor [--json] [--strict]
+        ai-env-optimizer scan [--json] [--strict] [--workspace-root PATH]
+        ai-env-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
+        ai-env-optimizer storage [--json] [--strict]
+        ai-env-optimizer storage cleanup --dry-run [--older-than DAYS] [--min-size MB] [--json]
+        ai-env-optimizer storage cleanup --apply TOKEN [--older-than DAYS] [--min-size MB] [--json]
+        ai-env-optimizer report [--json]
+        ai-env-optimizer schedule [--hour H] [--minute M] [--force-outside-window]
+        ai-env-optimizer schedule status
+        ai-env-optimizer unschedule
+        ai-env-optimizer version
+        ai-env-optimizer help
 
       doctor, scan, and agent-context are read-only. Scheduling is opt-in and owns only:
         #{Scheduler::LABEL}
@@ -32,7 +35,10 @@ module AIOptimizer
       stderr.puts(HELP)
       2
     rescue StandardError => error
-      stderr.puts("AI Optimizer could not complete: #{Redactor.scrub(error.message)}")
+      stderr.puts(
+        "AI Environment Optimizer could not complete: " \
+        "#{Redactor.scrub(error.message, home: env["HOME"] || Dir.home)}"
+      )
       3
     end
 
@@ -50,7 +56,7 @@ module AIOptimizer
         @stdout.write(HELP)
         0
       when "version", "--version"
-        @stdout.puts("ai-optimizer #{VERSION}")
+        @stdout.puts("ai-env-optimizer #{VERSION}")
         0
       when "doctor"
         run_diagnostic(args, Doctor)
@@ -58,6 +64,8 @@ module AIOptimizer
         run_diagnostic(args, Scanner)
       when "agent-context"
         run_agent_context(args)
+      when "storage"
+        run_storage(args)
       when "setup"
         run_setup(args)
       when "schedule"
@@ -107,7 +115,7 @@ module AIOptimizer
       raise UsageError, "workspace root must be an existing directory" unless Dir.exist?(workspace_root)
 
       values = config.defaults.merge("workspace_root" => workspace_root)
-      @stdout.puts("AI Optimizer will create:")
+      @stdout.puts("AI Environment Optimizer will create:")
       @stdout.puts("  #{display_path(config.path)}")
       @stdout.puts("Workspace root: #{display_path(workspace_root)}")
       config.save(values)
@@ -117,7 +125,97 @@ module AIOptimizer
         config.save(values)
         @stdout.puts("Evening doctor scheduled for 21:00 local time.")
       end
-      @stdout.puts("Ready. Run: ai-optimizer doctor")
+      @stdout.puts("Ready. Run: ai-env-optimizer doctor")
+      0
+    end
+
+    def run_storage(args)
+      if args.first == "cleanup"
+        args.shift
+        return run_storage_cleanup(args)
+      end
+
+      options = { json: false, strict: false }
+      parser = OptionParser.new do |opts|
+        opts.on("--json") { options[:json] = true }
+        opts.on("--strict") { options[:strict] = true }
+      end
+      parser.parse!(args)
+      require_no_args(args)
+
+      report = build_storage_report
+      @stdout.write(options[:json] ? report.to_json + "\n" : report.to_text)
+      report.exit_code(strict: options[:strict])
+    end
+
+    def run_storage_cleanup(args)
+      options = {
+        json: false,
+        dry_run: false,
+        apply_token: nil,
+        older_than_days: CleanupPlanner::DEFAULT_OLDER_THAN_DAYS,
+        min_size_mb: CleanupPlanner::DEFAULT_MIN_SIZE_MB
+      }
+      parser = OptionParser.new do |opts|
+        opts.on("--dry-run") { options[:dry_run] = true }
+        opts.on("--apply TOKEN") { |value| options[:apply_token] = value }
+        opts.on("--older-than DAYS", Integer) { |value| options[:older_than_days] = value }
+        opts.on("--min-size MB", Integer) { |value| options[:min_size_mb] = value }
+        opts.on("--json") { options[:json] = true }
+      end
+      parser.parse!(args)
+      require_no_args(args)
+      if options[:dry_run] && options[:apply_token]
+        raise UsageError, "choose either --dry-run or --apply"
+      end
+      if options[:apply_token] && !options[:apply_token].match?(/\A[0-9a-f]{64}\z/)
+        raise UsageError, "cleanup token must be 64 lowercase hexadecimal characters"
+      end
+
+      catalog = build_storage_catalog
+      planner = CleanupPlanner.new(
+        sources: catalog.sources,
+        home: home_dir,
+        data_dir: data_dir
+      )
+      if options[:apply_token]
+        result = CleanupExecutor.new(
+          planner: planner,
+          config: config,
+          trash_root: File.join(home_dir, ".Trash")
+        ).apply(
+          token: options[:apply_token],
+          older_than_days: options[:older_than_days],
+          min_size_mb: options[:min_size_mb]
+        )
+        public_result = result.reject { |key, _value| key == "trash_path_for_test" }
+        if options[:json]
+          @stdout.puts(JSON.generate(public_result))
+        else
+          @stdout.puts(
+            "Cleanup #{public_result.fetch("status")}: " \
+            "#{public_result.fetch("moved_files")} files moved to " \
+            "Trash/#{public_result.fetch("trash_folder")}"
+          )
+        end
+        return 0
+      end
+
+      plan = planner.preview(
+        older_than_days: options[:older_than_days],
+        min_size_mb: options[:min_size_mb]
+      )
+      if options[:json]
+        @stdout.puts(JSON.generate(plan.to_h))
+      else
+        summary = plan.to_h.fetch("summary")
+        @stdout.puts("Cleanup preview: #{summary.fetch("candidate_files")} files, #{summary.fetch("allocated_bytes")} allocated bytes")
+        @stdout.puts("Token: #{plan.token}")
+        @stdout.puts(
+          "Apply: ai-env-optimizer storage cleanup --apply #{plan.token} " \
+          "--older-than #{plan.older_than_days} --min-size #{plan.min_size_mb}"
+        )
+      end
       0
     end
 
@@ -208,7 +306,9 @@ module AIOptimizer
     def run_maintenance
       maintenance = Maintenance.new(
         data_dir: data_dir,
-        doctor: -> { Scanner.new(build_context(nil)).run }
+        doctor: -> { Scanner.new(build_context(nil)).run },
+        storage: -> { build_storage_report },
+        warning_bytes: config.storage_warning_bytes
       )
       receipt = maintenance.run
       @stdout.puts(JSON.generate(receipt))
@@ -216,7 +316,7 @@ module AIOptimizer
     end
 
     def build_context(workspace_override)
-      runner = CommandRunner.new
+      runner = CommandRunner.new(home: home_dir)
       values = begin
         config.load
       rescue ConfigError, OwnershipError
@@ -237,20 +337,39 @@ module AIOptimizer
       )
     end
 
+    def build_storage_report
+      catalog = build_storage_catalog
+      measurements = StorageScanner.new(
+        sources: catalog.sources,
+        home: home_dir,
+        data_dir: data_dir
+      ).scan
+      StorageReport.new(measurements, warning_bytes: config.storage_warning_bytes)
+    end
+
+    def build_storage_catalog
+      StorageCatalog.new(home: home_dir, data_dir: data_dir)
+    end
+
+    def home_dir
+      @home_dir ||= File.expand_path(@env["HOME"] || Dir.home)
+    end
+
     def config
       @config ||= Config.new(data_dir: data_dir)
     end
 
     def data_dir
       @data_dir ||= File.expand_path(
-        @env["AI_OPTIMIZER_DATA_DIR"] || Config.default_data_dir
+        env_value("AI_ENV_OPTIMIZER_DATA_DIR", "AI_OPTIMIZER_DATA_DIR") || Config.default_data_dir
       )
     end
 
     def scheduler
       @scheduler ||= Scheduler.new(
         launch_agents_dir: File.expand_path(
-          @env["AI_OPTIMIZER_LAUNCH_AGENTS_DIR"] || File.join(Dir.home, "Library", "LaunchAgents")
+          env_value("AI_ENV_OPTIMIZER_LAUNCH_AGENTS_DIR", "AI_OPTIMIZER_LAUNCH_AGENTS_DIR") ||
+            File.join(Dir.home, "Library", "LaunchAgents")
         ),
         data_dir: data_dir,
         executable: executable_path,
@@ -271,6 +390,10 @@ module AIOptimizer
 
     def require_no_args(args)
       raise UsageError, "unexpected arguments: #{args.length}" unless args.empty?
+    end
+
+    def env_value(canonical, legacy)
+      @env[canonical] || @env[legacy]
     end
 
     def display_path(path)

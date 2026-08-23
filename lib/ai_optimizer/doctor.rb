@@ -19,9 +19,9 @@ module AIOptimizer
             status: "unknown",
             message: "A diagnostic check could not complete",
             detail: "The failure was contained; sensitive command output was discarded.",
-            remediation: "Run the native tool doctor, then retry AI Optimizer.",
+            remediation: "Run the native tool doctor, then retry AI Environment Optimizer.",
             required: check.required?,
-            affects: ["ai-optimizer"]
+            affects: ["ai-env-optimizer"]
           )
         end
       end

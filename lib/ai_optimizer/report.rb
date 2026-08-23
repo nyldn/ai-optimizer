@@ -25,7 +25,8 @@ module AIOptimizer
     def to_h
       {
         schema_version: 1,
-        product: "ai-optimizer",
+        product: "ai-env-optimizer",
+        compatibility: { legacy_names: ["ai-optimizer"] },
         version: version,
         generated_at: generated_at.iso8601,
         summary: summary,
@@ -38,7 +39,7 @@ module AIOptimizer
     end
 
     def to_text(color: default_color?)
-      lines = ["AI Optimizer #{version}", ""]
+      lines = ["AI Environment Optimizer #{version}", ""]
       findings.each do |finding|
         label = finding.status.upcase
         label = colorize(label, finding.status) if color
