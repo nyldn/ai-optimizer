@@ -13,6 +13,14 @@ class ScriptTest < Minitest::Test
     end
   end
 
+  def test_public_text_files_do_not_contain_the_maintainer_home_path
+    paths = Dir[File.join(ROOT, "**", "*.{md,rb,sh,yml,yaml,json}")]
+    maintainer_home = File::SEPARATOR + ["Users", "chris", ""].join(File::SEPARATOR)
+    paths.each do |path|
+      refute_includes File.read(path), maintainer_home, "host path in #{path}"
+    end
+  end
+
   def test_codex_and_claude_entrypoints_share_the_agent_context_handshake
     agents = File.read(File.join(ROOT, "AGENTS.md"))
     claude = File.read(File.join(ROOT, "CLAUDE.md"))

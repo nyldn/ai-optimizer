@@ -132,6 +132,7 @@ module AIOptimizer
         stat.mode,
         stat.size,
         stat.respond_to?(:blocks) ? stat.blocks : nil,
+        stat.nlink,
         (stat.mtime.to_f * 1_000_000).to_i
       ]
       unless current == candidate.identity_row

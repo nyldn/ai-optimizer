@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
+require "stringio"
 
 class CLITest < Minitest::Test
   BIN = File.expand_path("../bin/ai-env-optimizer", __dir__)
@@ -19,6 +20,25 @@ class CLITest < Minitest::Test
     assert_includes stdout, "doctor"
     assert_includes stdout, "schedule"
     assert_includes stdout, "doctor, scan, and agent-context are read-only"
+  end
+
+  def test_generic_error_redacts_the_current_home
+    in_tmpdir do |home|
+      failing = Object.new
+      failing.define_singleton_method(:run) do |_argv|
+        raise Errno::ENOENT, File.join(home, "private", "missing")
+      end
+      stdout = StringIO.new
+      stderr = StringIO.new
+
+      status = AIOptimizer::CLI.stub(:new, failing) do
+        AIOptimizer::CLI.start([], stdout: stdout, stderr: stderr, env: { "HOME" => home })
+      end
+
+      assert_equal 3, status
+      refute_includes stderr.string, home
+      assert_includes stderr.string, "~/private/missing"
+    end
   end
 
   def test_doctor_json_is_one_document

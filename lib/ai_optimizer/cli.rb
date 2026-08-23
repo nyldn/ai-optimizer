@@ -35,7 +35,10 @@ module AIOptimizer
       stderr.puts(HELP)
       2
     rescue StandardError => error
-      stderr.puts("AI Environment Optimizer could not complete: #{Redactor.scrub(error.message)}")
+      stderr.puts(
+        "AI Environment Optimizer could not complete: " \
+        "#{Redactor.scrub(error.message, home: env["HOME"] || Dir.home)}"
+      )
       3
     end
 

@@ -96,6 +96,29 @@ class CleanupPlannerTest < Minitest::Test
     end
   end
 
+  def test_skips_hard_linked_files_instead_of_overstating_reclaimed_bytes
+    in_tmpdir do |home|
+      cache_source = source(
+        id: "test.cache", components: ["cache"],
+        classification: "regenerable", eligible: true
+      )
+      first = File.join(home, "cache", "first")
+      second = File.join(home, "cache", "second")
+      write_old_file(first)
+      File.link(first, second)
+
+      plan = planner(home, [cache_source]).preview(
+        older_than_days: 30,
+        min_size_mb: 1
+      )
+
+      assert_empty plan.candidates
+      assert_equal 0, plan.to_h.fetch("summary").fetch("allocated_bytes")
+      assert File.exist?(first)
+      assert File.exist?(second)
+    end
+  end
+
   def test_refuses_symlinks_and_invalid_filters
     in_tmpdir do |home|
       cache_source = source(

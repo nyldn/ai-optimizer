@@ -106,6 +106,7 @@ module AIOptimizer
         stat = File.lstat(entry)
         raise OwnershipError, "cleanup source contains a symlink" if stat.symlink?
         next unless stat.file? && stat.mtime < cutoff
+        next unless stat.nlink == 1
 
         identity = [stat.dev, stat.ino]
         next if seen.include?(identity)
@@ -120,7 +121,7 @@ module AIOptimizer
           allocated_bytes: allocated,
           identity_row: [
             source.id, relative, stat.dev, stat.ino, stat.mode, stat.size,
-            stat.respond_to?(:blocks) ? stat.blocks : nil,
+            stat.respond_to?(:blocks) ? stat.blocks : nil, stat.nlink,
             (stat.mtime.to_f * 1_000_000).to_i
           ]
         ).freeze

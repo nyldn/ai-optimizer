@@ -51,3 +51,11 @@ product logs. It requires a fresh preview token, stopped provider processes,
 and a same-filesystem move into a new private Trash folder. Its receipt omits
 original paths or filenames. AI Environment Optimizer never empties Trash and
 scheduled maintenance never invokes cleanup.
+
+Apply revalidates identity metadata immediately before each rename. A
+same-user process with concurrent write access could still change a directory
+between that check and the rename because Ruby 2.6 has no portable
+directory-descriptor-relative rename API. Provider-process refusal, allowlisted
+roots, fresh private destinations, and recoverability through Trash bound this
+residual race; it is not a protection against a hostile process already
+running as the same macOS user.

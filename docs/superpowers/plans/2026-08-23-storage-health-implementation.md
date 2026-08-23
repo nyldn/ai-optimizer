@@ -715,10 +715,10 @@ rtk git commit -m "docs: explain protected storage optimization"
 ### Task 9: Complete GitHub, Homebrew, release, and local migration
 
 **Files:**
-- Modify in sibling repository: `/Users/chris/git/homebrew-tap/Formula/ai-optimizer.rb` (rename to `Formula/ai-env-optimizer.rb`)
-- Create in sibling repository: `/Users/chris/git/homebrew-tap/formula_renames.json`
-- Modify in sibling repository: `/Users/chris/git/homebrew-tap/.github/workflows/ci.yml`
-- Modify in sibling repository: `/Users/chris/git/homebrew-tap/README.md`
+- Modify in a sibling Homebrew tap checkout: `Formula/ai-optimizer.rb` (rename to `Formula/ai-env-optimizer.rb`)
+- Create in the sibling Homebrew tap checkout: `formula_renames.json`
+- Modify in the sibling Homebrew tap checkout: `.github/workflows/ci.yml`
+- Modify in the sibling Homebrew tap checkout: `README.md`
 - Update external repository name: `nyldn/ai-optimizer` to `nyldn/ai-env-optimizer`
 
 - [ ] **Step 1: Run the complete local public-repository gate**
