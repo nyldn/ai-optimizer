@@ -3,12 +3,24 @@
 All notable changes are documented here. AI Optimizer follows semantic
 versioning.
 
+## 0.1.6 - 2026-08-22
+
+- Keep the configured AI Optimizer executable out of the launchd plist
+  entirely; a versioned product-owned launcher embeds its absolute path with
+  shell-safe quoting.
+- Make launcher identity stable across Homebrew keg target changes and refuse
+  drifted or symlinked launcher files.
+- Add live-upgrade regression coverage using a Homebrew revision change that
+  removes the prior Cellar directory.
+
 ## 0.1.5 - 2026-08-22
 
 - Replace the short-lived `/usr/bin/env` launch item with a stable,
   product-owned maintenance launcher under Application Support.
 - Keep the exact AI Optimizer executable out of launchd's program arguments so
-  Homebrew keg replacement does not unregister an opted-in schedule.
+  it is not the registered launch program. This was superseded by v0.1.6 after
+  live evidence showed an executable path in plist environment state was still
+  associated with keg replacement.
 - Refuse symlinked launcher targets and install the launcher atomically with
   owner-only permissions.
 

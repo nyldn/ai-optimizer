@@ -33,7 +33,7 @@ skills, repositories, or launchd unless you explicitly add `--schedule`.
 Example:
 
 ```text
-AI Optimizer 0.1.5
+AI Optimizer 0.1.6
 
 [PASS] system.macos - macOS is supported
 [PASS] tools.claude.present - Claude Code is available
@@ -77,9 +77,10 @@ later in the morning records `skipped_outside_window` and performs no scan.
 Configuration, receipts, and scheduler logs are stored with owner-only
 permissions.
 The launch agent uses an owner-only, product-owned maintenance launcher under
-Application Support. The launcher reads AI Optimizer's absolute executable
-path from its launchd environment, keeping package upgrades from silently
-unregistering an already opted-in schedule.
+Application Support. Its versioned filename is stable for the configured
+executable path, and the Homebrew or direct-install path does not appear in the
+launchd plist. Package upgrades therefore leave an already opted-in schedule
+registered.
 
 AI Optimizer owns only:
 
@@ -120,7 +121,7 @@ The direct path verifies the installer before it runs, then the installer
 verifies the release archive before changing live paths:
 
 ```sh
-VERSION=0.1.5
+VERSION=0.1.6
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh"
 curl -fLO "https://github.com/nyldn/ai-optimizer/releases/download/v$VERSION/install.sh.sha256"
 shasum -a 256 -c install.sh.sha256

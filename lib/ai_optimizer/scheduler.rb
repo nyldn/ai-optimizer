@@ -1,17 +1,14 @@
 # frozen_string_literal: true
 
 require "cgi"
+require "digest"
 require "fileutils"
 
 module AIOptimizer
   class Scheduler
     LABEL = "io.github.nyldn.ai-optimizer.daily"
     LOG_FILES = %w[daily.out.log daily.err.log].freeze
-    WRAPPER_NAME = "ai-optimizer-maintenance"
-    WRAPPER_CONTENT = <<~'SH'.freeze
-      #!/bin/sh
-      exec "$AI_OPTIMIZER_EXECUTABLE" run-maintenance
-    SH
+    WRAPPER_NAME = "ai-optimizer-maintenance-v1"
 
     attr_reader :launch_agents_dir, :data_dir, :executable, :uid, :runner
 
@@ -104,8 +101,10 @@ module AIOptimizer
       return unless File.file?(plist_path)
 
       content = File.binread(plist_path, 64_000)
+      versioned_wrapper = %r{/#{Regexp.escape(WRAPPER_NAME)}-[0-9a-f]{12}</string>}
       command_owned = content.include?("<string>run-maintenance</string>") ||
-                      content.include?("/#{WRAPPER_NAME}</string>")
+                      content.include?("/ai-optimizer-maintenance</string>") ||
+                      content.match?(versioned_wrapper)
       owned = content.include?("<string>#{LABEL}</string>") && command_owned
       raise OwnershipError, "existing launch agent is not provably owned by AI Optimizer" unless owned
     end
@@ -143,7 +142,16 @@ module AIOptimizer
     end
 
     def maintenance_wrapper_path
-      File.join(data_dir, "bin", WRAPPER_NAME)
+      digest = Digest::SHA256.hexdigest(executable)[0, 12]
+      File.join(data_dir, "bin", "#{WRAPPER_NAME}-#{digest}")
+    end
+
+    def maintenance_wrapper_content
+      "#!/bin/sh\nexec #{shell_quote(executable)} run-maintenance\n"
+    end
+
+    def shell_quote(value)
+      "'#{value.gsub("'", %q('"'"'))}'"
     end
 
     def write_maintenance_wrapper
@@ -153,9 +161,18 @@ module AIOptimizer
 
       FileUtils.mkdir_p(bin_dir, mode: 0o700)
       File.chmod(0o700, bin_dir)
-      temporary = File.join(bin_dir, ".#{WRAPPER_NAME}.#{Process.pid}.tmp")
+      if File.exist?(maintenance_wrapper_path)
+        existing = File.file?(maintenance_wrapper_path) && File.binread(maintenance_wrapper_path)
+        expected = maintenance_wrapper_content.dup.force_encoding(Encoding::BINARY)
+        raise OwnershipError, "existing maintenance launcher does not match AI Optimizer" unless existing == expected
+
+        File.chmod(0o700, maintenance_wrapper_path)
+        return
+      end
+
+      temporary = File.join(bin_dir, ".#{File.basename(maintenance_wrapper_path)}.#{Process.pid}.tmp")
       File.open(temporary, File::WRONLY | File::CREAT | File::EXCL, 0o700) do |file|
-        file.write(WRAPPER_CONTENT)
+        file.write(maintenance_wrapper_content)
         file.flush
         file.fsync
       end
@@ -205,8 +222,6 @@ module AIOptimizer
             <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
             <key>AI_OPTIMIZER_DATA_DIR</key>
             <string>#{escape(data_dir)}</string>
-            <key>AI_OPTIMIZER_EXECUTABLE</key>
-            <string>#{escape(executable)}</string>
           </dict>
           <key>StandardOutPath</key>
           <string>#{escape(File.join(log_dir, "daily.out.log"))}</string>
