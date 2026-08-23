@@ -71,6 +71,37 @@ class CLITest < Minitest::Test
     end
   end
 
+  def test_storage_cleanup_preview_is_read_only_and_path_free
+    in_tmpdir do |dir|
+      cache = File.join(dir, "Library", "Application Support", "Claude", "Cache")
+      FileUtils.mkdir_p(cache)
+      candidate = File.join(cache, "private-cache-entry")
+      File.open(candidate, "wb") { |file| file.write("x" * 1024 * 1024) }
+      old = Time.now - (45 * 86_400)
+      File.utime(old, old, candidate)
+      data_dir = File.join(dir, "product-data")
+      before = File.stat(candidate)
+
+      stdout, stderr, status = run_cli(
+        "storage", "cleanup", "--dry-run", "--older-than", "30",
+        "--min-size", "1", "--json",
+        env: { "HOME" => dir, "AI_ENV_OPTIMIZER_DATA_DIR" => data_dir }
+      )
+
+      assert status.success?, stderr
+      payload = JSON.parse(stdout)
+      assert_equal "dry_run", payload.fetch("mode")
+      assert_match(/\A[0-9a-f]{64}\z/, payload.fetch("token"))
+      assert_equal 1, payload.fetch("summary").fetch("candidate_files")
+      refute_includes stdout, "private-cache-entry"
+      refute_includes stdout, dir
+      refute File.exist?(data_dir)
+      assert_equal before.mtime, File.stat(candidate).mtime
+      assert_equal before.size, File.stat(candidate).size
+      assert_empty stderr
+    end
+  end
+
   def test_usage_error_exits_two
     _stdout, stderr, status = run_cli("doctor", "--not-a-real-flag")
     assert_equal 2, status.exitstatus

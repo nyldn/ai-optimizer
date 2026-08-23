@@ -125,7 +125,10 @@ module AIOptimizer
     end
 
     def run_storage(args)
-      raise UsageError, "storage cleanup is not available yet" if args.first == "cleanup"
+      if args.first == "cleanup"
+        args.shift
+        return run_storage_cleanup(args)
+      end
 
       options = { json: false, strict: false }
       parser = OptionParser.new do |opts|
@@ -138,6 +141,44 @@ module AIOptimizer
       report = build_storage_report
       @stdout.write(options[:json] ? report.to_json + "\n" : report.to_text)
       report.exit_code(strict: options[:strict])
+    end
+
+    def run_storage_cleanup(args)
+      options = {
+        json: false,
+        older_than_days: CleanupPlanner::DEFAULT_OLDER_THAN_DAYS,
+        min_size_mb: CleanupPlanner::DEFAULT_MIN_SIZE_MB
+      }
+      parser = OptionParser.new do |opts|
+        opts.on("--dry-run") { nil }
+        opts.on("--older-than DAYS", Integer) { |value| options[:older_than_days] = value }
+        opts.on("--min-size MB", Integer) { |value| options[:min_size_mb] = value }
+        opts.on("--json") { options[:json] = true }
+      end
+      parser.parse!(args)
+      require_no_args(args)
+
+      catalog = build_storage_catalog
+      plan = CleanupPlanner.new(
+        sources: catalog.sources,
+        home: home_dir,
+        data_dir: data_dir
+      ).preview(
+        older_than_days: options[:older_than_days],
+        min_size_mb: options[:min_size_mb]
+      )
+      if options[:json]
+        @stdout.puts(JSON.generate(plan.to_h))
+      else
+        summary = plan.to_h.fetch("summary")
+        @stdout.puts("Cleanup preview: #{summary.fetch("candidate_files")} files, #{summary.fetch("allocated_bytes")} allocated bytes")
+        @stdout.puts("Token: #{plan.token}")
+        @stdout.puts(
+          "Apply: ai-env-optimizer storage cleanup --apply #{plan.token} " \
+          "--older-than #{plan.older_than_days} --min-size #{plan.min_size_mb}"
+        )
+      end
+      0
     end
 
     def run_agent_context(args)
@@ -257,13 +298,17 @@ module AIOptimizer
     end
 
     def build_storage_report
-      catalog = StorageCatalog.new(home: home_dir, data_dir: data_dir)
+      catalog = build_storage_catalog
       measurements = StorageScanner.new(
         sources: catalog.sources,
         home: home_dir,
         data_dir: data_dir
       ).scan
       StorageReport.new(measurements)
+    end
+
+    def build_storage_catalog
+      StorageCatalog.new(home: home_dir, data_dir: data_dir)
     end
 
     def home_dir
