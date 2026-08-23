@@ -12,6 +12,9 @@ flowchart LR
     E --> F[Human report]
     E --> G[JSON report]
     G --> L[Agent context handshake]
+    M[Known AI storage catalog] --> N[Read-only allocation scanner]
+    N --> O[Path-free inventory and preview]
+    O -->|Explicit token apply| P[Same-volume move to Trash]
     H[Explicit setup or schedule] --> I[Owned config and direct-install launchd state]
     J[Explicit brew services start] --> K[Homebrew-managed launchd state]
 ```
@@ -40,6 +43,25 @@ actionable findings, assigns deterministic P0/P1/P2 priorities, and includes a
 static authorization and verification contract for Codex and Claude Code. It
 does not infer repair commands or introduce another mutation path.
 
+## Storage subsystem
+
+The immutable catalog classifies known Claude, Codex, Claude-Mem, and
+product-owned locations as `regenerable`, `bounded_logs`, `historical`, or
+`active`. Only entries explicitly marked cleanup-eligible in source code can
+reach the planner. Historical sessions and memories plus active worktrees,
+plugin state, and VM bundles cannot be made eligible through CLI arguments or
+configuration.
+
+The scanner uses `lstat`, refuses symlinked source ancestors, does not follow
+symlinks, de-duplicates allocation by device and inode, and emits only source
+IDs and aggregates. Cleanup preview selects old eligible files and hashes its
+options plus filesystem identity metadata into a token. Apply recomputes that
+set, checks provider processes and filesystem devices, then uses atomic rename
+operations into a new mode-0700 folder under the current user's Trash. There
+is no copy, recursive-delete, arbitrary-path, force, or scheduled apply path.
+The owner-only receipt contains only counts, source IDs, and the Trash folder
+basename.
+
 ## Ownership
 
 For a new installation, configuration and reports live under
@@ -62,3 +84,7 @@ product name. Keeping them prevents duplicate launchd jobs during the v0.2
 rename. The canonical CLI is `ai-env-optimizer`; `ai-optimizer` is shipped as a
 compatibility alias. Canonical `AI_ENV_OPTIMIZER_*` environment variables take
 precedence over supported legacy `AI_OPTIMIZER_*` variables.
+
+Both scheduling paths run diagnostics only within 19:00–02:00 local time.
+Storage inventory may add an aggregate warning to the maintenance receipt, but
+maintenance has no dependency on the cleanup planner or executor.

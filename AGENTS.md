@@ -26,6 +26,10 @@ through `CLAUDE.md`.
    workspace container. Do not run `setup`, scheduling, package-manager, or
    repair commands merely to gather context.
 
+   Run `./bin/ai-env-optimizer storage --json` only when the user asks about storage
+   or an evening receipt already reports a storage warning. Inventory is
+   read-only and path-free.
+
 2. Read `overall_status`, `prioritized_actions`, and both embedded reports.
    Treat priorities as:
 
@@ -41,6 +45,11 @@ through `CLAUDE.md`.
    - Ask before deleting data, creating credentials, authenticating remote MCP
      services, enabling schedules, upgrading unrelated software, or changing
      another repository's behavior.
+   - For storage cleanup, first show the aggregate `--dry-run` result.
+     Never infer permission to apply cleanup from a preview token. Apply only
+     the exact token and filters the user explicitly approved.
+   - Sessions, transcripts, memories, worktrees, and active plugin state are
+     protected and must never be reclassified as cleanup candidates ad hoc.
 
 4. Never print or commit credentials, environment values, MCP endpoints,
    command arguments from user sessions, workspace names, or workspace file
@@ -63,11 +72,14 @@ through `CLAUDE.md`.
 1. Read `README.md`, `docs/architecture.md`, and the relevant tests.
 2. Preserve these invariants:
 
-   - `doctor`, `scan`, and `agent-context` are read-only.
+   - `doctor`, `scan`, `agent-context`, `storage`, and cleanup preview are read-only.
    - Mutating commands may write only AI Environment Optimizer-owned configuration,
      reports, release installation paths, and launchd label
      `io.github.nyldn.ai-optimizer.daily`.
      This legacy internal label is intentionally stable across the v0.2 rename.
+   - Cleanup apply may move only catalog entries marked eligible in code, only
+     after token revalidation, and only to the current user's Trash. Scheduled
+     maintenance must never invoke cleanup.
    - Never silently edit or upgrade Claude Code, Codex, MCP servers, skills,
      companion tools, or repositories.
    - Keep runtime code compatible with `/usr/bin/ruby` 2.6 and the standard

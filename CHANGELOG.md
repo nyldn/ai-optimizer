@@ -13,6 +13,14 @@ versioning.
   while new installs use the canonical state directory and environment prefix.
 - Add a Homebrew same-tap formula migration so installed users upgrade without
   uninstalling or losing their opted-in service.
+- Add path-free storage inventory for Claude, Codex, Claude-Mem, and product
+  state with historical sessions, memories, worktrees, and active state
+  protected by code-level classifications.
+- Add token-verified, provider-idle, same-filesystem cleanup of allowlisted old
+  caches through a recoverable private Trash folder; no scheduled deletion or
+  arbitrary path mode exists.
+- Add report-only storage health to evening maintenance with a configurable
+  10 GiB warning threshold.
 
 ## 0.1.8 - 2026-08-23
 

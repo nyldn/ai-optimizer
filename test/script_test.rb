@@ -38,4 +38,21 @@ class ScriptTest < Minitest::Test
     assert File.executable?(File.join(ROOT, "bin", "ai-env-optimizer"))
     refute File.exist?(File.join(ROOT, "bin", "ai-optimizer"))
   end
+
+  def test_storage_workflow_is_documented_as_previewed_recoverable_and_session_safe
+    readme = File.read(File.join(ROOT, "README.md"))
+    agents = File.read(File.join(ROOT, "AGENTS.md"))
+    privacy = File.read(File.join(ROOT, "docs", "privacy.md"))
+    troubleshooting = File.read(File.join(ROOT, "docs", "troubleshooting.md"))
+
+    assert_includes readme, "ai-env-optimizer storage --json"
+    assert_includes readme, "ai-env-optimizer storage cleanup --dry-run --older-than 30 --min-size 100"
+    assert_includes readme, "ai-env-optimizer storage cleanup --apply TOKEN --older-than 30 --min-size 100"
+    assert_includes readme, "Sessions, transcripts, memories, worktrees, and active plugin state are protected"
+    assert_includes readme, "Evening maintenance never applies cleanup"
+    assert_includes troubleshooting, "~/.Trash/ai-env-optimizer-<timestamp>-<token-prefix>"
+    assert_includes privacy, "original paths or filenames"
+    assert_includes agents, "only when the user asks about storage"
+    assert_includes agents, "Never infer permission to apply cleanup from a preview token"
+  end
 end

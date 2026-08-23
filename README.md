@@ -27,6 +27,8 @@ skills, repositories, or launchd unless you explicitly add `--schedule`.
   companion tools, MCP configuration health, skills, and product-owned state.
 - A `scan` that summarizes Git workspace coverage without reporting repository
   names or file contents.
+- A privacy-safe storage inventory with protected-history classifications and
+  explicit, token-verified cache cleanup through macOS Trash.
 - The same stable findings in readable text or one clean JSON document.
 - A shared `agent-context` handshake that tells Codex or Claude Code what to
   inspect, how to prioritize findings, where mutation authority stops, and how
@@ -58,6 +60,9 @@ ai-env-optimizer setup [--workspace-root PATH] [--schedule]
 ai-env-optimizer doctor [--json] [--strict]
 ai-env-optimizer scan [--json] [--strict] [--workspace-root PATH]
 ai-env-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
+ai-env-optimizer storage [--json] [--strict]
+ai-env-optimizer storage cleanup --dry-run [--older-than DAYS] [--min-size MB] [--json]
+ai-env-optimizer storage cleanup --apply TOKEN [--older-than DAYS] [--min-size MB] [--json]
 ai-env-optimizer report [--json]
 ai-env-optimizer schedule [--hour H] [--minute M]
 ai-env-optimizer schedule status
@@ -97,6 +102,38 @@ priorities, remediation, safety rules, and completion checks. It is read-only.
 See [Working with Codex and Claude Code](docs/agent-workflow.md) for the schema,
 recommended prompt, and repair loop.
 
+For a storage request, both agents are instructed to run the read-only
+`./bin/ai-env-optimizer storage --json` inventory after the handshake. They do
+not infer cleanup permission from a warning or preview token.
+
+## Storage health and recoverable cleanup
+
+Start with a path-free inventory:
+
+```sh
+ai-env-optimizer storage --json
+```
+
+It reports aggregate allocated, protected, and potentially reclaimable bytes
+for known Claude, Codex, Claude-Mem, and product-owned locations.
+Sessions, transcripts, memories, worktrees, and active plugin state are protected
+and are never cleanup candidates. Inventory and preview do not write files.
+
+If reclaimable cache data is material, use this exact two-step loop:
+
+```sh
+ai-env-optimizer storage cleanup --dry-run --older-than 30 --min-size 100
+ai-env-optimizer storage cleanup --apply TOKEN --older-than 30 --min-size 100
+```
+
+Preview reports only aggregate source IDs, counts, allocated bytes, and a
+candidate-set token. Apply recomputes the candidate set and requires the same
+filters and token. It refuses metadata drift, symlinks, running provider apps,
+cross-filesystem moves, and destinations it did not create. Eligible files are
+moved—not copied or deleted—into one private dated folder in `~/.Trash`, so
+they remain recoverable until the user empties Trash. The tool never empties
+Trash and has no unattended cleanup mode.
+
 ## Evening maintenance
 
 Scheduling is opt-in:
@@ -125,6 +162,8 @@ ai-env-optimizer schedule
 The default is 21:00 local time. AI Environment Optimizer accepts 19:00 through
 02:00 and checks the time again when launchd actually starts the process. A Mac
 waking later in the morning records `skipped_outside_window` and performs no scan.
+Evening maintenance never applies cleanup; it only records aggregate storage
+health and a warning when configured storage exceeds the default 10 GiB threshold.
 Configuration, receipts, and scheduler logs are stored with owner-only
 permissions.
 The direct-install launch agent uses an owner-only, product-owned maintenance launcher under
@@ -148,16 +187,20 @@ ai-env-optimizer unschedule
 
 ## Privacy and mutation boundary
 
-`doctor`, `scan`, and `agent-context` are read-only. Reports contain status identifiers,
-counts, tool versions, and remediation. They do not contain environment values,
-command arguments, MCP endpoints, tokens, workspace names, or workspace file
+`doctor`, `scan`, `agent-context`, `storage`, and storage cleanup preview are
+read-only. Reports contain status identifiers, counts, tool versions, and
+remediation. They do not contain environment values, command arguments, MCP
+endpoints, tokens, workspace names, original storage paths, filenames, or file
 contents.
 
 The only mutating commands are:
 
 - `setup`, which writes AI Environment Optimizer configuration;
 - `schedule`, which writes and bootstraps the exact launch agent above;
-- `unschedule`, which removes that exact launch agent.
+- `unschedule`, which removes that exact launch agent;
+- `storage cleanup --apply TOKEN`, which moves only verified allowlisted cache
+  candidates to a private folder in the current user's Trash and writes an
+  aggregate owner-only receipt.
 
 Graphify, Claude-Mem, and ATK are useful optional companions. AI Environment Optimizer
 detects them but does not install, configure, update, or remove them.

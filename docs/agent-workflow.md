@@ -74,3 +74,19 @@ A useful first request is:
 
 Codex automatically discovers `AGENTS.md`; Claude Code loads `CLAUDE.md`, which
 imports the same contract.
+
+## Storage requests
+
+Run storage inventory only when the user asks about storage or the latest
+evening receipt reports a warning:
+
+```sh
+./bin/ai-env-optimizer storage --json
+```
+
+The output is read-only and excludes paths and filenames. Historical sessions,
+transcripts, Claude-Mem knowledge, worktrees, and active plugin state are
+protected. If the user wants cache reclamation, produce a dry-run first and
+show its aggregate counts and token. Do not apply that token until the user has
+explicitly approved the same `--older-than` and `--min-size` filters. Scheduled
+maintenance never supplies that approval and never runs cleanup.
