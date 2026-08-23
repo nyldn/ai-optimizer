@@ -116,4 +116,21 @@ class CleanupPlannerTest < Minitest::Test
       assert_raises(AIOptimizer::UsageError) { cleanup_planner.preview(min_size_mb: 0) }
     end
   end
+
+  def test_refuses_a_symlinked_source_ancestor
+    in_tmpdir do |home|
+      outside = File.join(home, "outside")
+      FileUtils.mkdir_p(File.join(outside, "cache"))
+      write_old_file(File.join(outside, "cache", "candidate"))
+      File.symlink(outside, File.join(home, ".codex"))
+      cache_source = source(
+        id: "test.cache", components: [".codex", "cache"],
+        classification: "regenerable", eligible: true
+      )
+
+      assert_raises(AIOptimizer::OwnershipError) do
+        planner(home, [cache_source]).preview(older_than_days: 30, min_size_mb: 1)
+      end
+    end
+  end
 end

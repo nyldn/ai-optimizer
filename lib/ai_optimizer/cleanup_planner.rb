@@ -93,8 +93,11 @@ module AIOptimizer
     end
 
     def source_candidates(source, cutoff, minimum_bytes)
+      if source.symlinked_component?(home: home, data_dir: data_dir)
+        raise OwnershipError, "cleanup source has a symlinked ancestor"
+      end
+
       root = source.resolve(home: home, data_dir: data_dir)
-      raise OwnershipError, "cleanup source must not be a symlink" if File.symlink?(root)
       return [] unless File.exist?(root)
 
       matches = []

@@ -88,6 +88,22 @@ class StorageScannerTest < Minitest::Test
     end
   end
 
+  def test_symlinked_source_ancestor_is_unknown_and_not_followed
+    in_tmpdir do |home|
+      outside = File.join(home, "outside")
+      FileUtils.mkdir_p(File.join(outside, "cache"))
+      File.write(File.join(outside, "cache", "secret"), "do not inspect")
+      File.symlink(outside, File.join(home, ".codex"))
+      codex_source = source(components: [".codex", "cache"])
+
+      measurement = scan(home, [codex_source]).first
+
+      assert_equal "unknown", measurement.fetch("status")
+      assert_equal 0, measurement.fetch("allocated_bytes")
+      refute_includes JSON.generate(measurement), "outside"
+    end
+  end
+
   def test_large_directory_scan_does_not_modify_entries
     in_tmpdir do |home|
       root = File.join(home, "cache")

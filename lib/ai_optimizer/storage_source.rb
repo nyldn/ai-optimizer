@@ -37,19 +37,49 @@ module AIOptimizer
     end
 
     def resolve(home:, data_dir:)
-      root = case base
-             when :home
-               File.expand_path(home)
-             when :application_support
-               File.join(File.expand_path(home), "Library", "Application Support")
-             when :data_dir
-               File.expand_path(data_dir)
-             end
+      root = base_root(home: home, data_dir: data_dir)
       path = File.expand_path(File.join(root, *components))
       prefix = root.end_with?(File::SEPARATOR) ? root : root + File::SEPARATOR
       raise OwnershipError, "storage source escapes its base" unless path.start_with?(prefix)
 
       path
+    end
+
+    def symlinked_component?(home:, data_dir:)
+      prefixes = base_prefixes(home: home, data_dir: data_dir)
+      current = prefixes.last
+      components.each do |component|
+        current = File.join(current, component)
+        prefixes << current
+      end
+      prefixes.any? { |path| File.symlink?(path) }
+    end
+
+    private
+
+    def base_root(home:, data_dir:)
+      case base
+      when :home
+        File.expand_path(home)
+      when :application_support
+        File.join(File.expand_path(home), "Library", "Application Support")
+      when :data_dir
+        File.expand_path(data_dir)
+      end
+    end
+
+    def base_prefixes(home:, data_dir:)
+      expanded_home = File.expand_path(home)
+      root = base_root(home: home, data_dir: data_dir)
+      return [expanded_home] if root == expanded_home
+
+      home_prefix = expanded_home.end_with?(File::SEPARATOR) ? expanded_home : expanded_home + File::SEPARATOR
+      return [root] unless root.start_with?(home_prefix)
+
+      relative_components = root.delete_prefix(home_prefix).split(File::SEPARATOR)
+      relative_components.each_with_object([expanded_home]) do |component, prefixes|
+        prefixes << File.join(prefixes.last, component)
+      end
     end
   end
 end

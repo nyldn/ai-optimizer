@@ -28,8 +28,9 @@ module AIOptimizer
     private
 
     def measure(source)
+      return empty_measurement(source, "unknown") if source.symlinked_component?(home: home, data_dir: data_dir)
+
       path = source.resolve(home: home, data_dir: data_dir)
-      return empty_measurement(source, "unknown") if File.symlink?(path)
       return empty_measurement(source, "absent") unless File.exist?(path)
 
       bytes = 0
