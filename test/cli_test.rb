@@ -102,6 +102,60 @@ class CLITest < Minitest::Test
     end
   end
 
+  def test_storage_cleanup_apply_requires_preview_token_and_returns_only_aggregates
+    in_tmpdir do |home|
+      data_dir = File.join(home, "product-data")
+      env = { "HOME" => home, "AI_ENV_OPTIMIZER_DATA_DIR" => data_dir }
+      _setup_out, setup_err, setup_status = run_cli(
+        "setup", "--workspace-root", home, env: env
+      )
+      assert setup_status.success?, setup_err
+      FileUtils.mkdir_p(File.join(home, ".Trash"))
+      candidate = File.join(data_dir, "logs", "private-log-name")
+      FileUtils.mkdir_p(File.dirname(candidate))
+      File.open(candidate, "wb") { |file| file.write("x" * 1024 * 1024) }
+      old = Time.now - (45 * 86_400)
+      File.utime(old, old, candidate)
+
+      preview_out, preview_err, preview_status = run_cli(
+        "storage", "cleanup", "--dry-run", "--older-than", "30",
+        "--min-size", "1", "--json", env: env
+      )
+      assert preview_status.success?, preview_err
+      token = JSON.parse(preview_out).fetch("token")
+
+      stdout, stderr, status = run_cli(
+        "storage", "cleanup", "--apply", token, "--older-than", "30",
+        "--min-size", "1", "--json", env: env
+      )
+
+      assert status.success?, stderr
+      payload = JSON.parse(stdout)
+      assert_equal "moved_to_trash", payload.fetch("status")
+      assert_equal 1, payload.fetch("moved_files")
+      refute payload.key?("trash_path_for_test")
+      refute_includes stdout, "private-log-name"
+      refute_includes stdout, home
+      refute File.exist?(candidate)
+      assert File.file?(File.join(data_dir, "reports", "latest-cleanup.json"))
+      assert_empty stderr
+    end
+  end
+
+  def test_storage_cleanup_apply_rejects_malformed_token
+    in_tmpdir do |home|
+      data_dir = File.join(home, "product-data")
+      _stdout, stderr, status = run_cli(
+        "storage", "cleanup", "--apply", "NOT-A-TOKEN", "--json",
+        env: { "HOME" => home, "AI_ENV_OPTIMIZER_DATA_DIR" => data_dir }
+      )
+
+      assert_equal 2, status.exitstatus
+      assert_includes stderr, "64 lowercase hexadecimal"
+      refute File.exist?(data_dir)
+    end
+  end
+
   def test_usage_error_exits_two
     _stdout, stderr, status = run_cli("doctor", "--not-a-real-flag")
     assert_equal 2, status.exitstatus

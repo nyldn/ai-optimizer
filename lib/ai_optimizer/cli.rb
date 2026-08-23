@@ -15,6 +15,8 @@ module AIOptimizer
         ai-env-optimizer scan [--json] [--strict] [--workspace-root PATH]
         ai-env-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
         ai-env-optimizer storage [--json] [--strict]
+        ai-env-optimizer storage cleanup --dry-run [--older-than DAYS] [--min-size MB] [--json]
+        ai-env-optimizer storage cleanup --apply TOKEN [--older-than DAYS] [--min-size MB] [--json]
         ai-env-optimizer report [--json]
         ai-env-optimizer schedule [--hour H] [--minute M] [--force-outside-window]
         ai-env-optimizer schedule status
@@ -146,24 +148,57 @@ module AIOptimizer
     def run_storage_cleanup(args)
       options = {
         json: false,
+        dry_run: false,
+        apply_token: nil,
         older_than_days: CleanupPlanner::DEFAULT_OLDER_THAN_DAYS,
         min_size_mb: CleanupPlanner::DEFAULT_MIN_SIZE_MB
       }
       parser = OptionParser.new do |opts|
-        opts.on("--dry-run") { nil }
+        opts.on("--dry-run") { options[:dry_run] = true }
+        opts.on("--apply TOKEN") { |value| options[:apply_token] = value }
         opts.on("--older-than DAYS", Integer) { |value| options[:older_than_days] = value }
         opts.on("--min-size MB", Integer) { |value| options[:min_size_mb] = value }
         opts.on("--json") { options[:json] = true }
       end
       parser.parse!(args)
       require_no_args(args)
+      if options[:dry_run] && options[:apply_token]
+        raise UsageError, "choose either --dry-run or --apply"
+      end
+      if options[:apply_token] && !options[:apply_token].match?(/\A[0-9a-f]{64}\z/)
+        raise UsageError, "cleanup token must be 64 lowercase hexadecimal characters"
+      end
 
       catalog = build_storage_catalog
-      plan = CleanupPlanner.new(
+      planner = CleanupPlanner.new(
         sources: catalog.sources,
         home: home_dir,
         data_dir: data_dir
-      ).preview(
+      )
+      if options[:apply_token]
+        result = CleanupExecutor.new(
+          planner: planner,
+          config: config,
+          trash_root: File.join(home_dir, ".Trash")
+        ).apply(
+          token: options[:apply_token],
+          older_than_days: options[:older_than_days],
+          min_size_mb: options[:min_size_mb]
+        )
+        public_result = result.reject { |key, _value| key == "trash_path_for_test" }
+        if options[:json]
+          @stdout.puts(JSON.generate(public_result))
+        else
+          @stdout.puts(
+            "Cleanup #{public_result.fetch("status")}: " \
+            "#{public_result.fetch("moved_files")} files moved to " \
+            "Trash/#{public_result.fetch("trash_folder")}"
+          )
+        end
+        return 0
+      end
+
+      plan = planner.preview(
         older_than_days: options[:older_than_days],
         min_size_mb: options[:min_size_mb]
       )
