@@ -14,6 +14,7 @@ module AIOptimizer
         ai-env-optimizer doctor [--json] [--strict]
         ai-env-optimizer scan [--json] [--strict] [--workspace-root PATH]
         ai-env-optimizer agent-context [--json] [--strict] [--workspace-root PATH]
+        ai-env-optimizer storage [--json] [--strict]
         ai-env-optimizer report [--json]
         ai-env-optimizer schedule [--hour H] [--minute M] [--force-outside-window]
         ai-env-optimizer schedule status
@@ -58,6 +59,8 @@ module AIOptimizer
         run_diagnostic(args, Scanner)
       when "agent-context"
         run_agent_context(args)
+      when "storage"
+        run_storage(args)
       when "setup"
         run_setup(args)
       when "schedule"
@@ -119,6 +122,22 @@ module AIOptimizer
       end
       @stdout.puts("Ready. Run: ai-env-optimizer doctor")
       0
+    end
+
+    def run_storage(args)
+      raise UsageError, "storage cleanup is not available yet" if args.first == "cleanup"
+
+      options = { json: false, strict: false }
+      parser = OptionParser.new do |opts|
+        opts.on("--json") { options[:json] = true }
+        opts.on("--strict") { options[:strict] = true }
+      end
+      parser.parse!(args)
+      require_no_args(args)
+
+      report = build_storage_report
+      @stdout.write(options[:json] ? report.to_json + "\n" : report.to_text)
+      report.exit_code(strict: options[:strict])
     end
 
     def run_agent_context(args)
@@ -235,6 +254,20 @@ module AIOptimizer
         architecture: architecture_result.success? ? architecture_result.stdout.strip : "unknown",
         macos_version: version_result.success? ? version_result.stdout.strip : "0"
       )
+    end
+
+    def build_storage_report
+      catalog = StorageCatalog.new(home: home_dir, data_dir: data_dir)
+      measurements = StorageScanner.new(
+        sources: catalog.sources,
+        home: home_dir,
+        data_dir: data_dir
+      ).scan
+      StorageReport.new(measurements)
+    end
+
+    def home_dir
+      @home_dir ||= File.expand_path(@env["HOME"] || Dir.home)
     end
 
     def config

@@ -49,6 +49,28 @@ class CLITest < Minitest::Test
     end
   end
 
+  def test_storage_json_is_read_only_path_free_and_canonical
+    in_tmpdir do |dir|
+      private_name = File.join(dir, ".codex", "sessions", "private-project")
+      FileUtils.mkdir_p(private_name)
+      File.write(File.join(private_name, "secret-session.jsonl"), "private")
+      data_dir = File.join(dir, "product-data")
+
+      stdout, stderr, status = run_cli(
+        "storage", "--json",
+        env: { "HOME" => dir, "AI_ENV_OPTIMIZER_DATA_DIR" => data_dir }
+      )
+      assert status.success?, stderr
+      payload = JSON.parse(stdout)
+      assert_equal "ai-env-optimizer", payload.fetch("product")
+      assert payload.fetch("sources").all? { |item| !item.key?("path") }
+      refute_includes stdout, "private-project"
+      refute_includes stdout, "secret-session.jsonl"
+      refute File.exist?(data_dir)
+      assert_empty stderr
+    end
+  end
+
   def test_usage_error_exits_two
     _stdout, stderr, status = run_cli("doctor", "--not-a-real-flag")
     assert_equal 2, status.exitstatus
