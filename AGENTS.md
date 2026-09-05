@@ -5,6 +5,17 @@ maintenance CLI for Claude Code, Codex, MCP, skills, and coding workspaces.
 Codex reads this file automatically. Claude Code receives the same contract
 through `CLAUDE.md`.
 
+## Browser automation
+
+- Use `agent-browser` by default for ordinary research, navigation, forms,
+  uploads, and application testing.
+- Use BrowserOS Neo when work needs a persistent authenticated session,
+  imported login state, parallel tabs, visible human handoff, or the user asks
+  for it explicitly.
+- Keep sessions named and isolated, preserve the user's existing tabs, refresh
+  element references after navigation, and close automation sessions when the
+  task is complete.
+
 ## Choose the workflow
 
 - Use the **Operator workflow** when the user asks to inspect, configure,
