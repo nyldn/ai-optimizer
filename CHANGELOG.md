@@ -3,7 +3,7 @@
 All notable changes are documented here. AI Environment Optimizer follows semantic
 versioning.
 
-## Unreleased
+## 0.3.0 - 2026-09-05
 
 - Detect Claude and Codex desktop bundles separately from standalone PATH CLIs,
   including the verified Codex bundle distributed under the ChatGPT app name.
