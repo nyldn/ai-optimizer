@@ -333,7 +333,8 @@ module AIOptimizer
         runner: runner,
         platform: RbConfig::CONFIG.fetch("host_os", ""),
         architecture: architecture_result.success? ? architecture_result.stdout.strip : "unknown",
-        macos_version: version_result.success? ? version_result.stdout.strip : "0"
+        macos_version: version_result.success? ? version_result.stdout.strip : "0",
+        application_roots: ["/Applications", File.join(home_dir, "Applications")]
       )
     end
 

@@ -54,6 +54,12 @@ rewrite the host.
 
 ## Starting a session
 
+For a desktop workflow, open the local repository in Codex or Claude Desktop's
+Code tab and ask the agent to run the handshake. Confirm that its shell runs
+on the Mac being assessed. Chat, Cowork, and cloud sessions may not have that
+host access. Use Terminal and share the redacted report when needed. See
+[desktop capabilities and CLI dependencies](desktop-applications.md).
+
 From the repository root, start either agent normally:
 
 ```sh

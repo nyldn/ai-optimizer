@@ -2,7 +2,8 @@
 
 AI Environment Optimizer (`ai-env-optimizer`) is a read-only health check and
 narrowly owned maintenance layer
-for macOS AI coding environments. It makes Claude Code, Codex, MCP servers,
+for macOS AI coding environments. It makes Claude and Codex desktop apps,
+their standalone CLIs, MCP servers,
 skills, and Git workspaces understandable without uploading your configuration
 or silently changing third-party tools.
 
@@ -23,7 +24,7 @@ skills, repositories, or launchd unless you explicitly add `--schedule`.
 
 ## What you get
 
-- A credential-free `doctor` for macOS, PATH, Claude Code, Codex, optional
+- A credential-free `doctor` for macOS, PATH, Claude and Codex desktop bundles, standalone CLIs, optional
   companion tools, MCP configuration health, skills, and product-owned state.
 - A `scan` that summarizes Git workspace coverage without reporting repository
   names or file contents.
@@ -88,6 +89,20 @@ service label `homebrew.mxcl.ai-optimizer` intentionally remain stable so an
 upgrade cannot create a duplicate background job.
 
 ## Use with Codex or Claude Code
+
+You can open this repository in Codex desktop or Claude Desktop's local Code
+tab and ask the agent to run the handshake below. Neither provider's standalone
+CLI is required for desktop bundle and configuration inspection. The optimizer
+itself remains a command-line tool and needs a host shell.
+
+`doctor` reports desktop applications separately from PATH CLIs. It recognizes
+verified Claude and Codex bundle IDs in `/Applications` and `~/Applications`,
+including the Codex bundle distributed as `ChatGPT.app`. If a desktop app is
+present without a standalone CLI, that CLI finding is informational. A bundled
+runtime is not executed or treated as a standalone installation.
+
+See [Desktop applications and CLI limits](docs/desktop-applications.md) for
+Chat, Cowork, Code, MCP configuration, headless automation, and manual checks.
 
 Clone or open this repository, then start either agent from its root. Codex
 automatically reads `AGENTS.md`; Claude Code loads `CLAUDE.md`, which imports
