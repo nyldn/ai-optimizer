@@ -105,8 +105,11 @@ class DesktopTest < Minitest::Test
       results = {}
       app(home, "ChatGPT", "com.openai.chat", results)
       report = AIOptimizer::Doctor.new(context(home, results)).run
-      refute_equal "pass", report.findings.find { |f| f.id == "desktop.codex.present" }.status
+      assert_equal "info", report.findings.find { |f| f.id == "desktop.codex.present" }.status
       assert_equal "warn", report.findings.find { |f| f.id == "tools.codex.present" }.status
+      app(home, "Codex", "com.openai.codex", results)
+      report = AIOptimizer::Doctor.new(context(home, results)).run
+      assert_equal "pass", report.findings.find { |f| f.id == "desktop.codex.present" }.status
     end
   end
 

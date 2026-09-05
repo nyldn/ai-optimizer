@@ -44,6 +44,8 @@ module AIOptimizer
             raise ConfigError if File.size(plist) > 1_048_576
 
             identifier = metadata_value(plist, "CFBundleIdentifier")
+            next if name == "ChatGPT" && identifier == "com.openai.chat"
+
             raise ConfigError unless identifier == app.fetch(:identifier)
 
             executable = metadata_value(plist, "CFBundleExecutable")
