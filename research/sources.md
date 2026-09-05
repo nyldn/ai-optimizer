@@ -33,6 +33,27 @@ sources published, released, committed, or freshly served since 2026-05-22.
   standalone/Homebrew installation, permissions, MCP, skills, and
   `codex doctor`.
 
+## Desktop support, verified 2026-09-05
+
+- [Claude desktop comparison](https://code.claude.com/docs/en/desktop): fetched
+  current page, rather than stale search snippets. Local Code configuration,
+  desktop MCP loading and precedence, headless CLI limits, and manual checks.
+- [Claude desktop quickstart](https://code.claude.com/docs/en/desktop-quickstart):
+  desktop works without a separately installed terminal CLI.
+- [Claude local MCP](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop):
+  desktop extension setup; manual JSON is not the entire connector inventory.
+- [Cowork architecture](https://support.claude.com/en/articles/14479288-claude-cowork-architecture-overview):
+  mode and execution location must be checked, not inferred from app presence.
+- [OpenAI desktop](https://learn.chatgpt.com/docs/app): current destination of
+  the former Codex app documentation URL. Local metadata independently verified
+  the `com.openai.codex` bundle ID under Codex and ChatGPT app names.
+- [Codex MCP](https://learn.chatgpt.com/docs/extend/mcp): desktop settings UI
+  and configuration shared by local clients using the same host.
+- [Codex configuration](https://learn.chatgpt.com/docs/config-file/config-basic):
+  user, project, profile, system, and managed configuration boundaries.
+- [Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode):
+  `codex exec` for scripts and CI.
+
 ## Similar-project source
 
 See [public research notes](../docs/research-notes.md) for exact recent commits

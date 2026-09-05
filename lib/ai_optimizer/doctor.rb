@@ -36,7 +36,7 @@ module AIOptimizer
   end
 
   class Doctor
-    CHECKS = [SystemCheck, ToolsCheck, MCPCheck, SkillsCheck, ProductCheck].freeze
+    CHECKS = [SystemCheck, ToolsCheck, DesktopCheck, MCPCheck, SkillsCheck, ProductCheck].freeze
 
     def initialize(context)
       @context = context

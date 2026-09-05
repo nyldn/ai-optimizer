@@ -3,6 +3,17 @@
 All notable changes are documented here. AI Environment Optimizer follows semantic
 versioning.
 
+## Unreleased
+
+- Detect Claude and Codex desktop bundles separately from standalone PATH CLIs,
+  including the verified Codex bundle distributed under the ChatGPT app name.
+- Keep missing standalone CLIs informational when the desktop app is detected;
+  describe headless automation dependencies and checks that remain in the app.
+- Add a separate, redacted manual Claude Desktop MCP inventory and document
+  current desktop, CLI, and cloud configuration boundaries.
+- Report distinct app copies without executing bundled runtimes or modifying
+  provider installations, accounts, connectors, or schedules.
+
 ## 0.2.0 - 2026-08-23
 
 - Rename the public project, repository, formula, release archive, and primary

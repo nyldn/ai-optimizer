@@ -4,6 +4,7 @@ module AIOptimizer
   class AgentContext
     WORKFLOW = [
       "Read the diagnostic evidence before changing configuration or code.",
+      "For desktop work, confirm the app mode and execution host; CLI presence or authentication does not prove desktop readiness.",
       "Investigate one prioritized finding at its owning source.",
       "Make the smallest reversible repair only when the user asked for changes.",
       "Re-run agent-context after any approved repair and include focused verification."

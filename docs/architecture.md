@@ -35,6 +35,16 @@ Statuses are `pass`, `warn`, `fail`, `info`, `skip`, and `unknown`.
 Required `fail` or `unknown` findings exit 1. A top-level internal failure
 exits 3.
 
+## Desktop inspection
+
+Desktop checks read bounded app metadata through macOS `plutil` and inspect
+the manual Claude Desktop MCP JSON separately. Application roots are injected
+into the check context; the CLI supplies the system and current user's
+Applications folders. App bundle identities are allowlisted, versions are
+restricted to numeric components, and app executables are never launched.
+Desktop-only installs keep missing standalone CLI findings informational.
+This does not certify session readiness or resolve effective configuration.
+
 ## Agent context
 
 `agent-context` runs the doctor and workspace scanner over one read-only check

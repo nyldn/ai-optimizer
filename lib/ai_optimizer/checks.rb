@@ -6,10 +6,10 @@ require "rbconfig"
 module AIOptimizer
   class CheckContext
     attr_reader :home, :data_dir, :workspace_root, :path, :runner, :platform,
-                :architecture, :macos_version
+                :architecture, :macos_version, :application_roots
 
     def initialize(home:, data_dir:, workspace_root:, path:, runner:,
-                   platform:, architecture:, macos_version:)
+                   platform:, architecture:, macos_version:, application_roots: [])
       @home = File.expand_path(home)
       @data_dir = File.expand_path(data_dir)
       @workspace_root = File.expand_path(workspace_root)
@@ -18,6 +18,19 @@ module AIOptimizer
       @platform = platform.to_s
       @architecture = architecture.to_s
       @macos_version = macos_version.to_s
+      @application_roots = application_roots.map { |root| File.expand_path(root) }.freeze
+    end
+
+    def desktop_applications
+      @desktop_applications ||= DesktopApplications.new(self)
+    end
+
+    def standalone_cli_paths(name)
+      executable_paths(name).reject do |candidate|
+        File.realpath(candidate).match?(%r{\.app/Contents/})
+      rescue SystemCallError
+        true
+      end
     end
 
     def executable_paths(name)
@@ -89,13 +102,14 @@ module AIOptimizer
     private
 
     def inspect_tool(command, label)
-      paths = @context.executable_paths(command)
+      paths = %w[claude codex].include?(command) ? @context.standalone_cli_paths(command) : @context.executable_paths(command)
       id_name = command.tr("-", "_")
       if paths.empty?
+        desktop = %w[claude codex].include?(command) && @context.desktop_applications.installed?(command)
         return Finding.new(
-          id: "tools.#{id_name}.present", category: "tools", status: "warn",
-          message: "#{label} is not installed or not on PATH",
-          remediation: remediation_for(command), required: false,
+          id: "tools.#{id_name}.present", category: "tools", status: desktop ? "info" : "warn",
+          message: desktop ? "#{label} desktop is detected; no standalone CLI was found on PATH" : "#{label} CLI is not installed or not on PATH",
+          remediation: desktop ? "Install the standalone #{command} CLI only for terminal diagnostics, scripts, or CI; desktop use does not require a PATH CLI." : remediation_for(command), required: false,
           affects: [command]
         )
       end
@@ -117,9 +131,9 @@ module AIOptimizer
     def remediation_for(command)
       case command
       when "claude"
-        "Install Claude Code if you want Claude diagnostics."
+        "Install Claude Desktop for interactive work, or the Claude Code CLI for terminal workflows. Neither is required by this optimizer."
       when "codex"
-        "Install Codex if you want Codex diagnostics."
+        "Install the Codex desktop app for interactive work, or the Codex CLI for terminal workflows. Neither is required by this optimizer."
       else
         "Install #{command} only if you want this optional integration."
       end
